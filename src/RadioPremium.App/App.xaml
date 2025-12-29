@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="RadioPremium.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Apple-style Color Palette -->
+            <Color x:Key="AppleBlue">#007AFF</Color>
+            <Color x:Key="ApplePurple">#AF52DE</Color>
+            <Color x:Key="AppleGreen">#34C759</Color>
+            <Color x:Key="AppleRed">#FF3B30</Color>
+            <Color x:Key="AppleOrange">#FF9500</Color>
+            <Color x:Key="ApplePink">#FF2D55</Color>
+            <Color x:Key="AppleTeal">#5AC8FA</Color>
+            
+            <!-- Background Colors -->
+            <Color x:Key="BackgroundPrimary">#FFFFFF</Color>
+            <Color x:Key="BackgroundSecondary">#F5F5F7</Color>
+            <Color x:Key="BackgroundTertiary">#E8E8ED</Color>
+            
+            <!-- Text Colors -->
+            <Color x:Key="TextPrimary">#1D1D1F</Color>
+            <Color x:Key="TextSecondary">#86868B</Color>
+            <Color x:Key="TextTertiary">#AEAEB2</Color>
+
+            <SolidColorBrush x:Key="AppleBlueBrush" Color="{StaticResource AppleBlue}" />
+            <SolidColorBrush x:Key="ApplePurpleBrush" Color="{StaticResource ApplePurple}" />
+            <SolidColorBrush x:Key="AppleGreenBrush" Color="{StaticResource AppleGreen}" />
+            <SolidColorBrush x:Key="AppleRedBrush" Color="{StaticResource AppleRed}" />
+            <SolidColorBrush x:Key="BackgroundPrimaryBrush" Color="{StaticResource BackgroundPrimary}" />
+            <SolidColorBrush x:Key="BackgroundSecondaryBrush" Color="{StaticResource BackgroundSecondary}" />
+            <SolidColorBrush x:Key="BackgroundTertiaryBrush" Color="{StaticResource BackgroundTertiary}" />
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}" />
+            <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}" />
+
+            <!-- Apple-style Primary Button -->
+            <Style x:Key="ApplePrimaryButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource AppleBlueBrush}" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="24,12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
+
+            <!-- Apple-style Secondary Button -->
+            <Style x:Key="AppleSecondaryButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource BackgroundSecondaryBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="24,12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
+
+            <!-- Apple-style Icon Button -->
+            <Style x:Key="AppleIconButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Width" Value="44" />
+                <Setter Property="Height" Value="44" />
+                <Setter Property="CornerRadius" Value="22" />
+                <Setter Property="Padding" Value="0" />
+            </Style>
+
+            <!-- Apple-style Pill Button -->
+            <Style x:Key="ApplePillButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource BackgroundSecondaryBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource AppleBlueBrush}" />
+                <Setter Property="CornerRadius" Value="20" />
+                <Setter Property="Padding" Value="20,10" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
+
+            <!-- Apple-style Card -->
+            <Style x:Key="AppleCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="White" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Padding" Value="20" />
+            </Style>
+
+            <!-- Apple-style Search Box -->
+            <Style x:Key="AppleSearchBoxStyle" TargetType="TextBox">
+                <Setter Property="Background" Value="{StaticResource BackgroundSecondaryBrush}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="16,12" />
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+
+            <!-- Apple-style Title -->
+            <Style x:Key="AppleLargeTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="34" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            </Style>
+
+            <!-- Apple-style Subtitle -->
+            <Style x:Key="AppleTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="22" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            </Style>
+
+            <!-- Apple-style Body -->
+            <Style x:Key="AppleBodyStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="17" />
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            </Style>
+
+            <!-- Apple-style Caption -->
+            <Style x:Key="AppleCaptionStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            </Style>
+
+            <!-- Play Button Style -->
+            <Style x:Key="PlayButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource AppleBlueBrush}" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Width" Value="44" />
+                <Setter Property="Height" Value="44" />
+                <Setter Property="CornerRadius" Value="22" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
+
+            <!-- Legacy styles for compatibility -->
+            <Style x:Key="AccentButtonStyle" BasedOn="{StaticResource ApplePrimaryButtonStyle}" TargetType="Button" />
+            <Style x:Key="IconButtonStyle" BasedOn="{StaticResource AppleIconButtonStyle}" TargetType="Button" />
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

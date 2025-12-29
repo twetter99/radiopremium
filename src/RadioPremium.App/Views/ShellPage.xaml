@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="RadioPremium.App.Views.ShellPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:RadioPremium.App.Controls"
+    xmlns:converters="using:RadioPremium.App.Converters"
+    Background="{StaticResource BackgroundSecondaryBrush}">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+    </Page.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Apple-style Sidebar -->
+        <Border 
+            Grid.Column="0" 
+            Grid.RowSpan="2"
+            Background="White"
+            Padding="0">
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- App Title -->
+                <StackPanel Grid.Row="0" Padding="24,32,24,24">
+                    <TextBlock 
+                        Text="Radio"
+                        FontSize="28"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock 
+                        Text="Premium"
+                        FontSize="28"
+                        FontWeight="Light"
+                        Foreground="{StaticResource AppleBlueBrush}"
+                        Margin="0,-4,0,0" />
+                </StackPanel>
+
+                <!-- Navigation Items -->
+                <StackPanel Grid.Row="1" Spacing="4" Padding="12,0">
+                    <Button 
+                        x:Name="RadioNavButton"
+                        Click="RadioNav_Click"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Background="{StaticResource BackgroundSecondaryBrush}"
+                        CornerRadius="12"
+                        Padding="16,14">
+                        <StackPanel Orientation="Horizontal" Spacing="14">
+                            <FontIcon 
+                                Glyph="&#xE95A;" 
+                                FontSize="20"
+                                Foreground="{StaticResource AppleBlueBrush}" />
+                            <TextBlock 
+                                Text="Descubrir" 
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextPrimaryBrush}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button 
+                        x:Name="FavoritesNavButton"
+                        Click="FavoritesNav_Click"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Background="Transparent"
+                        CornerRadius="12"
+                        Padding="16,14">
+                        <StackPanel Orientation="Horizontal" Spacing="14">
+                            <FontIcon 
+                                Glyph="&#xE735;" 
+                                FontSize="20"
+                                Foreground="{StaticResource ApplePurpleBrush}" />
+                            <TextBlock 
+                                Text="Favoritos" 
+                                FontSize="16"
+                                Foreground="{StaticResource TextPrimaryBrush}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button 
+                        x:Name="SettingsNavButton"
+                        Click="SettingsNav_Click"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Background="Transparent"
+                        CornerRadius="12"
+                        Padding="16,14">
+                        <StackPanel Orientation="Horizontal" Spacing="14">
+                            <FontIcon 
+                                Glyph="&#xE713;" 
+                                FontSize="20"
+                                Foreground="{StaticResource TextSecondaryBrush}" />
+                            <TextBlock 
+                                Text="Ajustes" 
+                                FontSize="16"
+                                Foreground="{StaticResource TextPrimaryBrush}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Spotify Connection -->
+                <StackPanel Grid.Row="2" Padding="12,0,12,24">
+                    <Border 
+                        Background="{StaticResource BackgroundSecondaryBrush}"
+                        CornerRadius="16"
+                        Padding="16">
+                        <Button 
+                            x:Name="SpotifyButton"
+                            Click="SpotifyButton_Click"
+                            HorizontalAlignment="Stretch"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="0">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Border 
+                                    Width="40" 
+                                    Height="40" 
+                                    CornerRadius="20"
+                                    Background="#1DB954">
+                                    <FontIcon 
+                                        Glyph="&#xE8D6;" 
+                                        FontSize="18"
+                                        Foreground="White" />
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock 
+                                        x:Name="SpotifyStatusText" 
+                                        Text="Conectar Spotify"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock 
+                                        Text="Guarda canciones"
+                                        FontSize="12"
+                                        Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Frame -->
+        <Frame 
+            x:Name="ContentFrame" 
+            Grid.Column="1" 
+            Grid.Row="0" />
+
+        <!-- Bottom Player Bar -->
+        <controls:PlayerBar 
+            x:Name="PlayerBarControl"
+            Grid.Column="1"
+            Grid.Row="1" />
+
+        <!-- Track Identified Card (replaces modal) -->
+        <Border 
+            x:Name="TrackIdentifiedCard"
+            Grid.Column="1"
+            Grid.Row="0"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Center"
+            Margin="0,16,0,0"
+            Visibility="Collapsed"
+            Background="#1DB954"
+            CornerRadius="16"
+            Padding="16,12"
+            MinWidth="400"
+            MaxWidth="600">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Track Info -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <!-- Icon or Artwork -->
+                    <Border 
+                        Width="48" 
+                        Height="48"
+                        CornerRadius="8"
+                        Background="#FFFFFF20">
+                        <Grid>
+                            <Image 
+                                x:Name="TrackArtworkSmall"
+                                Stretch="UniformToFill" />
+                            <FontIcon 
+                                x:Name="TrackIconPlaceholder"
+                                Glyph="&#xE8D6;" 
+                                FontSize="24" 
+                                Foreground="White"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Song Details -->
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock 
+                            Text="🎵 Canción identificada"
+                            FontSize="11"
+                            Foreground="#FFFFFFAA"
+                            FontWeight="Medium" />
+                        <TextBlock 
+                            x:Name="TrackTitle"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            TextTrimming="CharacterEllipsis"
+                            MaxWidth="200" />
+                        <TextBlock 
+                            x:Name="TrackArtist"
+                            FontSize="13"
+                            Foreground="#FFFFFFDD"
+                            TextTrimming="CharacterEllipsis"
+                            MaxWidth="200" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Album (optional, in center) -->
+                <TextBlock 
+                    x:Name="TrackAlbum"
+                    Grid.Column="1"
+                    FontSize="12"
+                    Foreground="#FFFFFFAA"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    TextTrimming="CharacterEllipsis"
+                    MaxWidth="150" />
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <!-- Add to Spotify Button -->
+                    <Button 
+                        x:Name="AddToSpotifyButton"
+                        Click="AddToSpotify_Click"
+                        Background="White"
+                        Foreground="#1DB954"
+                        CornerRadius="20"
+                        Padding="16,8"
+                        BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="Añadir a Spotify" FontWeight="SemiBold" FontSize="13" />
+                        </StackPanel>
+                    </Button>
+                    
+                    <!-- Close Button -->
+                    <Button 
+                        Click="CloseTrackCard_Click"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="8"
+                        CornerRadius="16">
+                        <FontIcon Glyph="&#xE711;" FontSize="14" Foreground="White" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Identification Progress Overlay -->
+        <Grid 
+            x:Name="IdentifyProgressOverlay"
+            Grid.ColumnSpan="2"
+            Grid.RowSpan="2"
+            Visibility="Collapsed"
+            Background="#80000000">
+            <Border 
+                Background="White"
+                CornerRadius="24"
+                Width="320"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Padding="32">
+                <StackPanel Spacing="20" HorizontalAlignment="Center">
+                    <ProgressRing 
+                        x:Name="IdentifyProgressRing"
+                        IsActive="True"
+                        Width="64"
+                        Height="64"
+                        Foreground="{StaticResource AppleBlueBrush}" />
+                    <TextBlock 
+                        x:Name="IdentifyStatusText"
+                        Text="Escuchando..."
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        HorizontalAlignment="Center" />
+                    <ProgressBar 
+                        x:Name="IdentifyProgressBar"
+                        Minimum="0"
+                        Maximum="100"
+                        Width="220"
+                        Foreground="{StaticResource AppleBlueBrush}"
+                        CornerRadius="4" />
+                    <Button 
+                        Click="CancelIdentify_Click"
+                        Content="Cancelar"
+                        Style="{StaticResource AppleSecondaryButtonStyle}"
+                        HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Info Bar for notifications -->
+        <InfoBar
+            x:Name="NotificationBar"
+            Grid.Column="1"
+            Grid.Row="0"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Center"
+            Margin="0,16,0,0"
+            IsOpen="False" />
+    </Grid>
+</Page>
