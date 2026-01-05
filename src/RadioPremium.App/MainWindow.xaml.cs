@@ -27,7 +27,7 @@ public sealed partial class MainWindow : Window
         _appWindow.Title = "Radio Premium";
         _appWindow.SetIcon("Assets/radio.ico");
 
-        // Set minimum size
+        // Set minimum size and presenter options
         var presenter = _appWindow.Presenter as OverlappedPresenter;
         if (presenter is not null)
         {
@@ -36,8 +36,8 @@ public sealed partial class MainWindow : Window
             presenter.IsMinimizable = true;
         }
 
-        // Set initial size
-        _appWindow.Resize(new Windows.Graphics.SizeInt32(1400, 900));
+        // Set initial size (larger for better UX)
+        _appWindow.Resize(new Windows.Graphics.SizeInt32(1600, 1000));
 
         // Center on screen
         CenterOnScreen();

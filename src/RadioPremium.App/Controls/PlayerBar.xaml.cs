@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using RadioPremium.Core.Messages;
 using RadioPremium.Core.Models;
@@ -10,11 +11,13 @@ using RadioPremium.Core.ViewModels;
 namespace RadioPremium.App.Controls;
 
 /// <summary>
-/// Player bar control for playback controls
+/// Premium Player bar control with Apple-like design
 /// </summary>
 public sealed partial class PlayerBar : UserControl
 {
     public PlayerViewModel ViewModel { get; }
+    private DispatcherTimer? _equalizerTimer;
+    private Random _random = new();
 
     public PlayerBar()
     {
@@ -22,8 +25,26 @@ public sealed partial class PlayerBar : UserControl
         ViewModel = App.GetService<PlayerViewModel>();
         DataContext = ViewModel;
 
-        // Update UI when station changes
+        // Update UI when properties change
         ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+        
+        // Initialize equalizer animation timer
+        InitializeEqualizerAnimation();
+    }
+
+    private void InitializeEqualizerAnimation()
+    {
+        _equalizerTimer = new DispatcherTimer();
+        _equalizerTimer.Interval = TimeSpan.FromMilliseconds(200);
+        _equalizerTimer.Tick += EqualizerTimer_Tick;
+    }
+
+    private void EqualizerTimer_Tick(object? sender, object e)
+    {
+        // Animate equalizer bars with random heights
+        EqBar1.Height = 4 + _random.Next(10);
+        EqBar2.Height = 4 + _random.Next(10);
+        EqBar3.Height = 4 + _random.Next(10);
     }
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -41,6 +62,35 @@ public sealed partial class PlayerBar : UserControl
             {
                 UpdateVolumeIcon();
             });
+        }
+        else if (e.PropertyName == nameof(ViewModel.PlaybackState))
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdatePlayingState();
+            });
+        }
+    }
+
+    private void UpdatePlayingState()
+    {
+        var isPlaying = ViewModel.PlaybackState == PlaybackState.Playing;
+        
+        // Show/hide equalizer
+        EqualizerBars.Visibility = isPlaying ? Visibility.Visible : Visibility.Collapsed;
+        
+        // Start/stop animation
+        if (isPlaying)
+        {
+            _equalizerTimer?.Start();
+            // Show glow
+            ArtworkGlow.Opacity = 0.3;
+        }
+        else
+        {
+            _equalizerTimer?.Stop();
+            // Hide glow
+            ArtworkGlow.Opacity = 0;
         }
     }
 
@@ -69,24 +119,69 @@ public sealed partial class PlayerBar : UserControl
         if (ViewModel.IsMuted || ViewModel.Volume == 0)
         {
             VolumeIcon.Glyph = "\uE74F"; // Muted
+            VolumeIcon.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Microsoft.UI.Colors.Gray);
         }
-        else if (ViewModel.Volume < 0.3)
+        else if (ViewModel.Volume < 0.33)
         {
-            VolumeIcon.Glyph = "\uE993"; // Low
+            VolumeIcon.Glyph = "\uE993"; // Low - one wave
+            VolumeIcon.Foreground = (Microsoft.UI.Xaml.Media.Brush)
+                Application.Current.Resources["TextSecondaryBrush"];
         }
-        else if (ViewModel.Volume < 0.7)
+        else if (ViewModel.Volume < 0.66)
         {
-            VolumeIcon.Glyph = "\uE994"; // Medium
+            VolumeIcon.Glyph = "\uE994"; // Medium - two waves
+            VolumeIcon.Foreground = (Microsoft.UI.Xaml.Media.Brush)
+                Application.Current.Resources["TextPrimaryBrush"];
         }
         else
         {
-            VolumeIcon.Glyph = "\uE767"; // High
+            VolumeIcon.Glyph = "\uE767"; // High - three waves
+            // Tinte rojo sutil para volumen alto
+            VolumeIcon.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(255, 220, 60, 60));
         }
     }
+
+    // ========== BUTTON HANDLERS ==========
 
     private void PlayPause_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.TogglePlayPauseCommand.Execute(null);
+    }
+
+    private void PlayButton_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Button button)
+        {
+            button.Scale = new System.Numerics.Vector3(1.08f, 1.08f, 1f);
+        }
+    }
+
+    private void PlayButton_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Button button)
+        {
+            button.Scale = new System.Numerics.Vector3(1f, 1f, 1f);
+        }
+    }
+
+    private void ActionButton_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Button button)
+        {
+            button.Scale = new System.Numerics.Vector3(1.05f, 1.05f, 1f);
+            button.Opacity = 0.9;
+        }
+    }
+
+    private void ActionButton_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Button button)
+        {
+            button.Scale = new System.Numerics.Vector3(1f, 1f, 1f);
+            button.Opacity = 1.0;
+        }
     }
 
     private void Stop_Click(object sender, RoutedEventArgs e)

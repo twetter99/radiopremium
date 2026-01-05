@@ -9,6 +9,27 @@ using System.Collections.ObjectModel;
 namespace RadioPremium.Core.ViewModels;
 
 /// <summary>
+/// Navigation tabs for the radio page
+/// </summary>
+public enum RadioTab
+{
+    ForYou,
+    Explore,
+    Live,
+    ByCountry
+}
+
+/// <summary>
+/// Sort options for stations list
+/// </summary>
+public enum SortOption
+{
+    Popular,
+    Recent,
+    Alphabetical
+}
+
+/// <summary>
 /// ViewModel for radio station browsing and search
 /// </summary>
 public partial class RadioViewModel : ObservableRecipient
@@ -38,9 +59,40 @@ public partial class RadioViewModel : ObservableRecipient
     [ObservableProperty]
     private int _totalResults;
 
+    // New navigation properties
+    [ObservableProperty]
+    private RadioTab _currentTab = RadioTab.ForYou;
+
+    [ObservableProperty]
+    private SortOption _currentSort = SortOption.Popular;
+
+    [ObservableProperty]
+    private string _activeGenreFilter = string.Empty;
+
+    [ObservableProperty]
+    private string _activeCountryFilter = string.Empty;
+
+    [ObservableProperty]
+    private string _sectionTitle = "Emisoras populares";
+
+    [ObservableProperty]
+    private bool _hasActiveFilters;
+
     public ObservableCollection<Station> Stations { get; } = new();
     public ObservableCollection<CountryInfo> Countries { get; } = new();
     public ObservableCollection<TagInfo> Tags { get; } = new();
+
+    // Genre chips for quick filtering
+    public ObservableCollection<string> GenreChips { get; } = new()
+    {
+        "Todos", "Pop", "Rock", "Jazz", "Electrónica", "Clásica", "Chill", "Hip Hop", "Latino"
+    };
+
+    // Country chips for quick filtering
+    public ObservableCollection<string> CountryChips { get; } = new()
+    {
+        "Todos", "España", "USA", "UK", "México", "Argentina", "Colombia", "Francia", "Alemania"
+    };
 
     public RadioViewModel(
         IRadioBrowserService radioBrowserService,
@@ -81,22 +133,186 @@ public partial class RadioViewModel : ObservableRecipient
         }
     }
 
+    /// <summary>
+    /// Change the active navigation tab
+    /// </summary>
+    [RelayCommand]
+    private async Task ChangeTabAsync(RadioTab tab)
+    {
+        CurrentTab = tab;
+        ActiveGenreFilter = string.Empty;
+        ActiveCountryFilter = string.Empty;
+        HasActiveFilters = false;
+
+        switch (tab)
+        {
+            case RadioTab.ForYou:
+                SectionTitle = "Recomendadas para ti";
+                await LoadTopStationsAsync();
+                break;
+            case RadioTab.Explore:
+                SectionTitle = "Explorar emisoras";
+                await LoadTopStationsAsync();
+                break;
+            case RadioTab.Live:
+                SectionTitle = "En vivo ahora";
+                await LoadLiveStationsAsync();
+                break;
+            case RadioTab.ByCountry:
+                SectionTitle = "Por país";
+                await LoadTopStationsAsync();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Filter by genre chip
+    /// </summary>
+    [RelayCommand]
+    private async Task FilterByGenreAsync(string genre)
+    {
+        if (genre == "Todos")
+        {
+            ActiveGenreFilter = string.Empty;
+            HasActiveFilters = !string.IsNullOrEmpty(ActiveCountryFilter);
+            SectionTitle = CurrentTab == RadioTab.Explore ? "Explorar emisoras" : "Todas las emisoras";
+        }
+        else
+        {
+            ActiveGenreFilter = genre;
+            HasActiveFilters = true;
+            SectionTitle = $"Emisoras de {genre}";
+        }
+
+        await ApplyFiltersAsync();
+    }
+
+    /// <summary>
+    /// Filter by country chip
+    /// </summary>
+    [RelayCommand]
+    private async Task FilterByCountryAsync(string country)
+    {
+        if (country == "Todos")
+        {
+            ActiveCountryFilter = string.Empty;
+            HasActiveFilters = !string.IsNullOrEmpty(ActiveGenreFilter);
+            SectionTitle = CurrentTab == RadioTab.ByCountry ? "Por país" : "Todas las emisoras";
+        }
+        else
+        {
+            ActiveCountryFilter = country;
+            HasActiveFilters = true;
+            SectionTitle = $"Emisoras de {country}";
+        }
+
+        await ApplyFiltersAsync();
+    }
+
+    /// <summary>
+    /// Change sort order
+    /// </summary>
+    [RelayCommand]
+    private async Task ChangeSortAsync(SortOption sort)
+    {
+        CurrentSort = sort;
+        await ApplyFiltersAsync();
+    }
+
+    /// <summary>
+    /// Clear all active filters
+    /// </summary>
+    [RelayCommand]
+    private async Task ClearAllFiltersAsync()
+    {
+        ActiveGenreFilter = string.Empty;
+        ActiveCountryFilter = string.Empty;
+        HasActiveFilters = false;
+        SectionTitle = GetDefaultTitleForTab();
+        await ApplyFiltersAsync();
+    }
+
+    private string GetDefaultTitleForTab() => CurrentTab switch
+    {
+        RadioTab.ForYou => "Recomendadas para ti",
+        RadioTab.Explore => "Explorar emisoras",
+        RadioTab.Live => "En vivo ahora",
+        RadioTab.ByCountry => "Por país",
+        _ => "Emisoras"
+    };
+
+    private async Task ApplyFiltersAsync()
+    {
+        var orderBy = CurrentSort switch
+        {
+            SortOption.Popular => "clickcount",
+            SortOption.Recent => "lastchangetime",
+            SortOption.Alphabetical => "name",
+            _ => "clickcount"
+        };
+
+        // Map display names to API names
+        var countryForApi = ActiveCountryFilter switch
+        {
+            "España" => "Spain",
+            "USA" => "United States of America",
+            "UK" => "United Kingdom",
+            "México" => "Mexico",
+            _ => ActiveCountryFilter
+        };
+
+        var tagForApi = ActiveGenreFilter.ToLowerInvariant() switch
+        {
+            "electrónica" => "electronic",
+            "clásica" => "classical",
+            "hip hop" => "hip-hop",
+            _ => ActiveGenreFilter.ToLowerInvariant()
+        };
+
+        await SearchStationsInternalAsync(
+            name: null,
+            country: string.IsNullOrEmpty(countryForApi) ? null : countryForApi,
+            tag: string.IsNullOrEmpty(tagForApi) ? null : tagForApi,
+            orderBy: orderBy);
+    }
+
+    private async Task LoadLiveStationsAsync()
+    {
+        // For "Live" tab, we prioritize stations with higher current listeners
+        await SearchStationsInternalAsync(null, null, null, "clickcount");
+    }
+
+    /// <summary>
+    /// Load trending/popular stations - called from sidebar navigation
+    /// </summary>
+    public async Task LoadTrendingStationsAsync()
+    {
+        SectionTitle = "Tendencias";
+        await SearchStationsInternalAsync(null, null, null, "clicktrend");
+    }
+
     [RelayCommand]
     private async Task LoadTopStationsAsync()
     {
-        await SearchStationsAsync(null, null, null);
+        await SearchStationsInternalAsync(null, null, null, "clickcount");
     }
 
     [RelayCommand]
     private async Task SearchAsync()
     {
-        await SearchStationsAsync(
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            SectionTitle = $"Resultados para \"{SearchQuery}\"";
+        }
+        
+        await SearchStationsInternalAsync(
             string.IsNullOrWhiteSpace(SearchQuery) ? null : SearchQuery,
             string.IsNullOrWhiteSpace(SelectedCountry) ? null : SelectedCountry,
-            string.IsNullOrWhiteSpace(SelectedTag) ? null : SelectedTag);
+            string.IsNullOrWhiteSpace(SelectedTag) ? null : SelectedTag,
+            "clickcount");
     }
 
-    private async Task SearchStationsAsync(string? name, string? country, string? tag)
+    private async Task SearchStationsInternalAsync(string? name, string? country, string? tag, string orderBy)
     {
         // Cancel any previous search
         _searchCts?.Cancel();
@@ -108,7 +324,7 @@ public partial class RadioViewModel : ObservableRecipient
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"[RadioVM] Starting search: name={name}, country={country}, tag={tag}");
+            System.Diagnostics.Debug.WriteLine($"[RadioVM] Starting search: name={name}, country={country}, tag={tag}, orderBy={orderBy}");
             
             var favoriteIds = await _favoritesRepository.GetFavoriteIdsAsync(token);
             System.Diagnostics.Debug.WriteLine($"[RadioVM] Got {favoriteIds.Count} favorite IDs");
@@ -117,8 +333,8 @@ public partial class RadioViewModel : ObservableRecipient
                 name: name,
                 country: country,
                 tag: tag,
-                orderBy: "clickcount",
-                reverse: true,
+                orderBy: orderBy,
+                reverse: orderBy != "name", // Only reverse for non-alphabetical
                 limit: 100,
                 cancellationToken: token);
             
@@ -175,14 +391,6 @@ public partial class RadioViewModel : ObservableRecipient
         }
 
         Messenger.Send(new FavoriteChangedMessage(station.StationUuid, isFavorite));
-    }
-
-    [RelayCommand]
-    private void ClearFilters()
-    {
-        SearchQuery = string.Empty;
-        SelectedCountry = string.Empty;
-        SelectedTag = string.Empty;
     }
 
     protected override void OnActivated()

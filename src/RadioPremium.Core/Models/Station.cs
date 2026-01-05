@@ -98,6 +98,12 @@ public sealed class Station
     public bool IsFavorite { get; set; }
 
     /// <summary>
+    /// Indicates whether this station is currently playing (local state)
+    /// </summary>
+    [JsonIgnore]
+    public bool IsPlaying { get; set; }
+
+    /// <summary>
     /// Gets the best available stream URL
     /// </summary>
     public string StreamUrl => !string.IsNullOrEmpty(UrlResolved) ? UrlResolved : Url;
@@ -109,6 +115,42 @@ public sealed class Station
         string.IsNullOrEmpty(Tags) 
             ? Array.Empty<string>() 
             : Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>
+    /// Gets the first tag or empty string
+    /// </summary>
+    public string FirstTag => TagList.FirstOrDefault() ?? string.Empty;
+
+    /// <summary>
+    /// Gets formatted metadata: "Country · Genre"
+    /// </summary>
+    public string FormattedMetadata
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrEmpty(Country)) parts.Add(Country);
+            if (!string.IsNullOrEmpty(FirstTag)) parts.Add(char.ToUpper(FirstTag[0]) + FirstTag.Substring(1));
+            return string.Join(" · ", parts);
+        }
+    }
+
+    /// <summary>
+    /// Gets initials for placeholder (max 2 chars)
+    /// </summary>
+    public string Initials
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Name)) return "?";
+            var words = Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length >= 2)
+                return $"{char.ToUpper(words[0][0])}{char.ToUpper(words[1][0])}";
+            return Name.Length >= 2 
+                ? $"{char.ToUpper(Name[0])}{char.ToUpper(Name[1])}" 
+                : char.ToUpper(Name[0]).ToString();
+        }
+    }
 
     /// <summary>
     /// Gets whether the station is currently online

@@ -58,21 +58,44 @@ public sealed partial class ShellPage : Page
 
     private void SelectNavButton(Button button)
     {
-        // Reset previous button
-        if (_selectedNavButton != null)
+        // Reset previous button (but preserve RadioNavButton's special red style)
+        if (_selectedNavButton != null && _selectedNavButton != RadioNavButton)
         {
             _selectedNavButton.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-            if (_selectedNavButton.Content is StackPanel prevPanel && prevPanel.Children[1] is TextBlock prevText)
+            if (_selectedNavButton.Content is StackPanel prevPanel && prevPanel.Children.Count > 1 && prevPanel.Children[1] is TextBlock prevText)
             {
                 prevText.FontWeight = Microsoft.UI.Text.FontWeights.Normal;
             }
+            else if (_selectedNavButton.Content is Grid prevGrid)
+            {
+                // Handle buttons with Grid content (like FavoritesNavButton)
+                if (prevGrid.Children[0] is StackPanel innerPanel && innerPanel.Children.Count > 1 && innerPanel.Children[1] is TextBlock innerText)
+                {
+                    innerText.FontWeight = Microsoft.UI.Text.FontWeights.Normal;
+                }
+            }
         }
 
-        // Highlight new button
-        button.Background = (Brush)Application.Current.Resources["BackgroundSecondaryBrush"];
-        if (button.Content is StackPanel panel && panel.Children[1] is TextBlock text)
+        // Highlight new button (RadioNavButton keeps its red style)
+        if (button == RadioNavButton)
         {
-            text.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
+            button.Background = (Brush)Application.Current.Resources["AppleRedBrush"];
+        }
+        else
+        {
+            button.Background = (Brush)Application.Current.Resources["BackgroundSecondaryBrush"];
+            if (button.Content is StackPanel panel && panel.Children.Count > 1 && panel.Children[1] is TextBlock text)
+            {
+                text.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
+            }
+            else if (button.Content is Grid grid)
+            {
+                // Handle buttons with Grid content (like FavoritesNavButton)
+                if (grid.Children[0] is StackPanel innerPanel && innerPanel.Children.Count > 1 && innerPanel.Children[1] is TextBlock innerText)
+                {
+                    innerText.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
+                }
+            }
         }
 
         _selectedNavButton = button;
@@ -94,6 +117,24 @@ public sealed partial class ShellPage : Page
     {
         SelectNavButton(SettingsNavButton);
         ContentFrame.Navigate(typeof(SettingsPage));
+    }
+
+    private void GenresNav_Click(object sender, RoutedEventArgs e)
+    {
+        SelectNavButton(GenresNavButton);
+        ContentFrame.Navigate(typeof(RadioPage), new RadioNavigationParameter(RadioTab.Explore, "genre"));
+    }
+
+    private void CountriesNav_Click(object sender, RoutedEventArgs e)
+    {
+        SelectNavButton(CountriesNavButton);
+        ContentFrame.Navigate(typeof(RadioPage), new RadioNavigationParameter(RadioTab.ByCountry));
+    }
+
+    private void TrendingNav_Click(object sender, RoutedEventArgs e)
+    {
+        SelectNavButton(TrendingNavButton);
+        ContentFrame.Navigate(typeof(RadioPage), new RadioNavigationParameter(RadioTab.ForYou, "trending"));
     }
 
     private void OnTrackIdentified(object recipient, TrackIdentifiedMessage message)
@@ -166,7 +207,11 @@ public sealed partial class ShellPage : Page
         {
             if (message.Success)
             {
-                TrackIdentifiedCard.Visibility = Visibility.Collapsed;
+                // Solo mostrar notificación, no cerrar el modal
+                NotificationBar.Title = "Añadido a Spotify";
+                NotificationBar.Message = "La canción se ha guardado en tu biblioteca";
+                NotificationBar.Severity = InfoBarSeverity.Success;
+                NotificationBar.IsOpen = true;
             }
         });
     }
@@ -188,24 +233,41 @@ public sealed partial class ShellPage : Page
             TrackIconPlaceholder.Visibility = Visibility.Visible;
         }
 
-        TrackIdentifiedCard.Visibility = Visibility.Visible;
+        TrackIdentifiedOverlay.Visibility = Visibility.Visible;
     }
 
     private void CloseTrackCard_Click(object sender, RoutedEventArgs e)
     {
-        TrackIdentifiedCard.Visibility = Visibility.Collapsed;
+        TrackIdentifiedOverlay.Visibility = Visibility.Collapsed;
     }
 
     private void CloseOverlay_Click(object sender, RoutedEventArgs e)
     {
-        TrackIdentifiedCard.Visibility = Visibility.Collapsed;
+        TrackIdentifiedOverlay.Visibility = Visibility.Collapsed;
     }
 
-    private void AddToSpotify_Click(object sender, RoutedEventArgs e)
+    private async void AddToSpotify_Click(object sender, RoutedEventArgs e)
     {
         if (_currentTrack is not null)
         {
-            WeakReferenceMessenger.Default.Send(new AddToSpotifyMessage(_currentTrack));
+            // Abrir Spotify con la búsqueda de la canción exacta
+            var searchQuery = Uri.EscapeDataString($"{_currentTrack.Title} {_currentTrack.Artist}");
+            var spotifySearchUrl = $"https://open.spotify.com/search/{searchQuery}";
+            
+            try
+            {
+                // Intentar abrir la app de Spotify primero, si no, abre el navegador
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(spotifySearchUrl));
+            }
+            catch
+            {
+                // Fallback: abrir en navegador
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = spotifySearchUrl,
+                    UseShellExecute = true
+                });
+            }
         }
     }
 
@@ -248,17 +310,32 @@ public sealed partial class ShellPage : Page
         }
     }
 
-    public void AddToSpotify()
+    public async void AddToSpotify()
     {
         if (_currentTrack is not null && TrackIdentifiedCard.Visibility == Visibility.Visible)
         {
-            WeakReferenceMessenger.Default.Send(new AddToSpotifyMessage(_currentTrack));
+            // Abrir Spotify con la búsqueda de la canción exacta
+            var searchQuery = Uri.EscapeDataString($"{_currentTrack.Title} {_currentTrack.Artist}");
+            var spotifySearchUrl = $"https://open.spotify.com/search/{searchQuery}";
+            
+            try
+            {
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(spotifySearchUrl));
+            }
+            catch
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = spotifySearchUrl,
+                    UseShellExecute = true
+                });
+            }
         }
     }
 
     public void NavigateToSettings()
     {
-        SelectNavButton(SettingsNavButton);
+        // Navigate to settings
         ContentFrame.Navigate(typeof(SettingsPage));
     }
 }

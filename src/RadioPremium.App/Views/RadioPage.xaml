@@ -10,252 +10,1145 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:FavoriteToIconConverter x:Key="FavoriteToIconConverter" />
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+        <converters:StringToColorBrushConverter x:Key="StringToColorBrushConverter" />
+        <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter" />
+        <converters:PlayingToBorderThicknessConverter x:Key="PlayingToBorderThicknessConverter" />
     </Page.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid Padding="40,32">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-            <!-- Header -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,32">
+        <!-- LEVEL 0: FIXED HEADER BAR -->
+        <Border 
+            Grid.Row="0"
+            Background="{StaticResource BackgroundSecondaryBrush}"
+            Padding="24,12,24,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Page Title -->
                 <TextBlock 
-                    Text="Descubre"
-                    Style="{StaticResource AppleLargeTitleStyle}" />
-                <TextBlock 
-                    Text="Encuentra emisoras de radio de todo el mundo"
-                    Style="{StaticResource AppleCaptionStyle}"
-                    Margin="0,4,0,0" />
+                    Grid.Column="0"
+                    Text="Radio"
+                    Style="{StaticResource AppleLargeTitleStyle}"
+                    VerticalAlignment="Center" />
+
+                <!-- Compact Search Trigger (Spotlight style) -->
+                <Button 
+                    x:Name="SearchTriggerButton"
+                    Grid.Column="1"
+                    Click="SearchTrigger_Click"
+                    Background="{StaticResource BackgroundTertiaryBrush}"
+                    BorderThickness="0"
+                    CornerRadius="8"
+                    Padding="12,8"
+                    HorizontalAlignment="Center"
+                    MaxWidth="240">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon 
+                            Glyph="&#xE721;"
+                            FontSize="14"
+                            Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock 
+                            Text="Buscar"
+                            FontSize="14"
+                            Foreground="{StaticResource TextSecondaryBrush}" />
+                        <Border 
+                            Background="#E5E5E5"
+                            CornerRadius="4"
+                            Padding="6,2"
+                            Margin="8,0,0,0">
+                            <TextBlock 
+                                Text="⌘K"
+                                FontSize="11"
+                                Foreground="{StaticResource TextTertiaryBrush}" />
+                        </Border>
+                    </StackPanel>
+                </Button>
+
+                <!-- Settings Button -->
+                <Button 
+                    Grid.Column="2"
+                    Click="SettingsButton_Click"
+                    Style="{StaticResource AppleIconButtonStyle}"
+                    ToolTipService.ToolTip="Ajustes">
+                    <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{StaticResource TextSecondaryBrush}" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- LEVEL 1: PRIMARY NAVIGATION TABS -->
+        <Border 
+            Grid.Row="1"
+            Background="{StaticResource BackgroundSecondaryBrush}"
+            BorderBrush="#E5E5E5"
+            BorderThickness="0,0,0,1"
+            Padding="24,0,24,0">
+            <StackPanel Orientation="Horizontal" Spacing="24">
+                <Button 
+                    x:Name="TabForYou"
+                    Content="Para ti"
+                    Click="Tab_Click"
+                    Tag="ForYou"
+                    Style="{StaticResource TabButtonStyle}" />
+                <Button 
+                    x:Name="TabExplore"
+                    Content="Explorar"
+                    Click="Tab_Click"
+                    Tag="Explore"
+                    Style="{StaticResource TabButtonStyle}" />
+                <Button 
+                    x:Name="TabLive"
+                    Content="En vivo"
+                    Click="Tab_Click"
+                    Tag="Live"
+                    Style="{StaticResource TabButtonStyle}" />
+                <Button 
+                    x:Name="TabByCountry"
+                    Content="Por país"
+                    Click="Tab_Click"
+                    Tag="ByCountry"
+                    Style="{StaticResource TabButtonStyle}" />
             </StackPanel>
+        </Border>
 
-            <!-- Search Bar - Apple Style -->
-            <Border 
-                Grid.Row="1" 
-                Background="White"
-                CornerRadius="16"
-                Padding="8"
-                Margin="0,0,0,24">
-                <Grid>
+        <!-- LEVEL 2: CONTEXTUAL FILTER CHIPS -->
+        <Border 
+            Grid.Row="2"
+            Background="{StaticResource BackgroundSecondaryBrush}"
+            Padding="24,12,24,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Genre Chips (visible for "Para ti" and "Explorar") -->
+                <ScrollViewer 
+                    x:Name="GenreChipsScroll"
+                    Grid.Column="0"
+                    HorizontalScrollBarVisibility="Hidden"
+                    VerticalScrollBarVisibility="Disabled"
+                    HorizontalScrollMode="Auto">
+                    <StackPanel x:Name="GenreChipsPanel" Orientation="Horizontal" Spacing="8">
+                        <Button Content="Todos" Tag="Todos" Click="GenreChip_Click" Style="{StaticResource FilterChipActiveStyle}" x:Name="ChipTodos" />
+                        <Button Content="Pop" Tag="Pop" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="Rock" Tag="Rock" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="Jazz" Tag="Jazz" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="Electrónica" Tag="Electrónica" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="Clásica" Tag="Clásica" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="Chill" Tag="Chill" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="Hip Hop" Tag="Hip Hop" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="Latino" Tag="Latino" Click="GenreChip_Click" Style="{StaticResource FilterChipStyle}" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Country Chips (visible for "Por país" tab) -->
+                <ScrollViewer 
+                    x:Name="CountryChipsScroll"
+                    Grid.Column="0"
+                    HorizontalScrollBarVisibility="Hidden"
+                    VerticalScrollBarVisibility="Disabled"
+                    HorizontalScrollMode="Auto"
+                    Visibility="Collapsed">
+                    <StackPanel x:Name="CountryChipsPanel" Orientation="Horizontal" Spacing="8">
+                        <Button Content="Todos" Tag="Todos" Click="CountryChip_Click" Style="{StaticResource FilterChipActiveStyle}" x:Name="ChipCountryTodos" />
+                        <Button Content="🇪🇸 España" Tag="España" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="🇺🇸 USA" Tag="USA" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="🇬🇧 UK" Tag="UK" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="🇲🇽 México" Tag="México" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="🇦🇷 Argentina" Tag="Argentina" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="🇨🇴 Colombia" Tag="Colombia" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="🇫🇷 Francia" Tag="Francia" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                        <Button Content="🇩🇪 Alemania" Tag="Alemania" Click="CountryChip_Click" Style="{StaticResource FilterChipStyle}" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- LEVEL 3: Sort Dropdown -->
+                <ComboBox 
+                    x:Name="SortDropdown"
+                    Grid.Column="1"
+                    SelectedIndex="0"
+                    SelectionChanged="Sort_SelectionChanged"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    MinWidth="120"
+                    CornerRadius="6">
+                    <ComboBoxItem Content="▼ Populares" Tag="Popular" />
+                    <ComboBoxItem Content="▼ Recientes" Tag="Recent" />
+                    <ComboBoxItem Content="▼ A-Z" Tag="Alphabetical" />
+                </ComboBox>
+            </Grid>
+        </Border>
+
+        <!-- MAIN SCROLLABLE CONTENT -->
+        <ScrollViewer 
+            x:Name="MainScrollViewer"
+            Grid.Row="3"
+            VerticalScrollBarVisibility="Auto" 
+            VerticalScrollMode="Auto"
+            HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Padding="24,20,24,24">
+
+                <!-- Section Header with Title and Active Filters Badge -->
+                <Grid Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <FontIcon 
+                    <TextBlock 
                         Grid.Column="0"
-                        Glyph="&#xE721;"
-                        FontSize="18"
-                        Foreground="{StaticResource TextTertiaryBrush}"
-                        Margin="12,0,8,0"
-                        VerticalAlignment="Center" />
+                        x:Name="SectionTitleText"
+                        Text="{x:Bind ViewModel.SectionTitle, Mode=OneWay}"
+                        Style="{StaticResource AppleTitleStyle}" />
 
-                    <TextBox 
-                        x:Name="SearchBox"
-                        Grid.Column="1"
-                        PlaceholderText="Buscar emisoras, países o géneros..."
-                        Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        KeyDown="SearchBox_KeyDown"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        FontSize="17"
-                        VerticalAlignment="Center"
-                        Padding="8,12" />
-
+                    <!-- Active Filters Badge -->
                     <Button 
-                        Grid.Column="2"
-                        Click="SearchButton_Click"
-                        Style="{StaticResource ApplePrimaryButtonStyle}"
-                        Margin="8,0,4,0">
-                        <TextBlock Text="Buscar" FontWeight="SemiBold" />
+                        x:Name="ClearFiltersButton"
+                        Grid.Column="1"
+                        Click="ClearFilters_Click"
+                        Visibility="{x:Bind ViewModel.HasActiveFilters, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Background="#FEE2E2"
+                        Foreground="#DC2626"
+                        CornerRadius="12"
+                        Padding="12,4"
+                        BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="6" Height="6" Fill="#DC2626" />
+                            <TextBlock Text="Limpiar filtros" FontSize="12" FontWeight="Medium" />
+                            <FontIcon Glyph="&#xE711;" FontSize="10" />
+                        </StackPanel>
                     </Button>
                 </Grid>
-            </Border>
 
-            <!-- Filter Pills -->
-            <ScrollViewer 
-                Grid.Row="2" 
-                HorizontalScrollBarVisibility="Auto"
-                VerticalScrollBarVisibility="Disabled"
-                Margin="0,0,0,24">
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <ComboBox 
-                        x:Name="CountryComboBox"
-                        PlaceholderText="🌍 País"
-                        Width="160"
-                        CornerRadius="20"
-                        ItemsSource="{x:Bind ViewModel.Countries}"
-                        DisplayMemberPath="Name"
-                        SelectionChanged="CountryComboBox_SelectionChanged" />
+                <!-- Featured Section (only in "Para ti" tab) -->
+                <Grid x:Name="FeaturedSection" Margin="0,0,0,24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                    <ComboBox 
-                        x:Name="TagComboBox"
-                        PlaceholderText="🎵 Género"
-                        Width="160"
-                        CornerRadius="20"
-                        ItemsSource="{x:Bind ViewModel.Tags}"
-                        DisplayMemberPath="Name"
-                        SelectionChanged="TagComboBox_SelectionChanged" />
+                    <!-- Section Header with Nav Buttons -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                    <Button 
-                        Content="🔥 Populares"
-                        Style="{StaticResource ApplePillButtonStyle}"
-                        Click="PopularButton_Click" />
+                        <StackPanel Grid.Column="0">
+                            <TextBlock 
+                                Text="HECHO PARA TI"
+                                Style="{StaticResource AppleSubtitleStyle}"
+                                Margin="0,0,0,2" />
+                            <TextBlock 
+                                Text="Top selecciones para ti"
+                                Style="{StaticResource AppleTitleStyle}" />
+                        </StackPanel>
 
-                    <Button 
-                        Content="🆕 Nuevas"
-                        Style="{StaticResource ApplePillButtonStyle}"
-                        Click="NewButton_Click" />
-                </StackPanel>
-            </ScrollViewer>
+                        <!-- Navigation Arrows -->
+                        <StackPanel 
+                            Grid.Column="1" 
+                            Orientation="Horizontal" 
+                            Spacing="4"
+                            VerticalAlignment="Bottom">
+                            <Button 
+                                x:Name="FeaturedPrevButton"
+                                Click="FeaturedPrev_Click"
+                                Style="{StaticResource AppleIconButtonStyle}"
+                                Width="32" Height="32"
+                                CornerRadius="16"
+                                Background="{StaticResource BackgroundTertiaryBrush}">
+                                <FontIcon Glyph="&#xE76B;" FontSize="12" />
+                            </Button>
+                            <Button 
+                                x:Name="FeaturedNextButton"
+                                Click="FeaturedNext_Click"
+                                Style="{StaticResource AppleIconButtonStyle}"
+                                Width="32" Height="32"
+                                CornerRadius="16"
+                                Background="{StaticResource BackgroundTertiaryBrush}">
+                                <FontIcon Glyph="&#xE76C;" FontSize="12" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
 
-            <!-- Loading -->
-            <ProgressRing 
-                Grid.Row="3"
-                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                Width="48"
-                Height="48"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Margin="0,48,0,0" />
-
-            <!-- Stations Grid -->
-            <ItemsRepeater 
-                x:Name="StationsRepeater"
-                Grid.Row="3"
-                ItemsSource="{x:Bind ViewModel.Stations}"
-                Margin="0,8,0,0">
-                
-                <ItemsRepeater.Layout>
-                    <UniformGridLayout 
-                        MinItemWidth="340"
-                        MinItemHeight="100"
-                        MinRowSpacing="16"
-                        MinColumnSpacing="16"
-                        ItemsStretch="Fill" />
-                </ItemsRepeater.Layout>
-
-                <ItemsRepeater.ItemTemplate>
-                    <DataTemplate>
-                        <Border 
-                            Background="White"
-                            CornerRadius="16"
-                            Padding="16"
-                            PointerEntered="StationCard_PointerEntered"
-                            PointerExited="StationCard_PointerExited"
-                            PointerPressed="StationCard_PointerPressed">
+                    <!-- Featured Cards with Peek and Fade -->
+                    <Grid Grid.Row="1">
+                        <!-- Clip container for overflow -->
+                        <Border x:Name="FeaturedContainer" Padding="0,0,0,8">
+                            <StackPanel x:Name="FeaturedCardsPanel" Orientation="Horizontal" Spacing="16">
                             
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                            <!-- Featured Card 1 - Pop -->
+                            <Border 
+                                Width="160" Height="160" 
+                                CornerRadius="12"
+                                PointerEntered="FeaturedCard_PointerEntered"
+                                PointerExited="FeaturedCard_PointerExited"
+                                PointerPressed="FeaturedCard_PointerPressed"
+                                Tag="pop">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FF6B9D" Offset="0" />
+                                        <GradientStop Color="#C44569" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid Padding="16">
+                                    <StackPanel VerticalAlignment="Bottom">
+                                        <TextBlock Text="¡Anímate!" FontSize="20" FontWeight="Bold" Foreground="White" />
+                                        <TextBlock Text="Pop, Dance, Hits" FontSize="11" Foreground="#FFFFFFBB" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <!-- Play Icon (shows on hover) -->
+                                    <Border 
+                                        x:Name="PlayIconPop"
+                                        Width="36" Height="36"
+                                        CornerRadius="18"
+                                        Background="#FFFFFF"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Opacity="0">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="#C44569" />
+                                    </Border>
+                                </Grid>
+                            </Border>
 
-                                <!-- Station Logo -->
-                                <Border 
-                                    Grid.Column="0"
-                                    Width="64"
-                                    Height="64"
-                                    CornerRadius="14"
-                                    Background="{StaticResource BackgroundSecondaryBrush}"
-                                    Margin="0,0,16,0">
-                                    <Grid>
-                                        <Image 
-                                            Source="{Binding Favicon}"
-                                            Stretch="UniformToFill" />
-                                        <FontIcon 
-                                            Glyph="&#xE95A;"
-                                            FontSize="24"
-                                            Foreground="{StaticResource TextTertiaryBrush}"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center" />
-                                    </Grid>
-                                </Border>
+                            <!-- Featured Card 2 - Chill -->
+                            <Border 
+                                Width="160" Height="160" 
+                                CornerRadius="12"
+                                PointerEntered="FeaturedCard_PointerEntered"
+                                PointerExited="FeaturedCard_PointerExited"
+                                PointerPressed="FeaturedCard_PointerPressed"
+                                Tag="chill">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#11998E" Offset="0" />
+                                        <GradientStop Color="#38EF7D" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid Padding="16">
+                                    <StackPanel VerticalAlignment="Bottom">
+                                        <TextBlock Text="Relajación" FontSize="20" FontWeight="Bold" Foreground="White" />
+                                        <TextBlock Text="Chill, Ambient, Lo-Fi" FontSize="11" Foreground="#FFFFFFBB" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border 
+                                        x:Name="PlayIconChill"
+                                        Width="36" Height="36"
+                                        CornerRadius="18"
+                                        Background="#FFFFFF"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Opacity="0">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="#11998E" />
+                                    </Border>
+                                </Grid>
+                            </Border>
 
-                                <!-- Station Info -->
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
-                                    <TextBlock 
-                                        Text="{Binding Name}"
-                                        FontSize="17"
-                                        FontWeight="SemiBold"
-                                        Foreground="{StaticResource TextPrimaryBrush}"
-                                        TextTrimming="CharacterEllipsis"
-                                        MaxLines="1" />
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                            <!-- Featured Card 3 - Rock -->
+                            <Border 
+                                Width="160" Height="160" 
+                                CornerRadius="12"
+                                PointerEntered="FeaturedCard_PointerEntered"
+                                PointerExited="FeaturedCard_PointerExited"
+                                PointerPressed="FeaturedCard_PointerPressed"
+                                Tag="rock">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#667EEA" Offset="0" />
+                                        <GradientStop Color="#764BA2" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid Padding="16">
+                                    <StackPanel VerticalAlignment="Bottom">
+                                        <TextBlock Text="Rock Clásico" FontSize="20" FontWeight="Bold" Foreground="White" />
+                                        <TextBlock Text="Rock, Classic Rock" FontSize="11" Foreground="#FFFFFFBB" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border 
+                                        x:Name="PlayIconRock"
+                                        Width="36" Height="36"
+                                        CornerRadius="18"
+                                        Background="#FFFFFF"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Opacity="0">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="#667EEA" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <!-- Featured Card 4 - Jazz -->
+                            <Border 
+                                Width="160" Height="160" 
+                                CornerRadius="12"
+                                PointerEntered="FeaturedCard_PointerEntered"
+                                PointerExited="FeaturedCard_PointerExited"
+                                PointerPressed="FeaturedCard_PointerPressed"
+                                Tag="jazz">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#8E2DE2" Offset="0" />
+                                        <GradientStop Color="#4A00E0" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid Padding="16">
+                                    <StackPanel VerticalAlignment="Bottom">
+                                        <TextBlock Text="Jazz &amp; Blues" FontSize="20" FontWeight="Bold" Foreground="White" />
+                                        <TextBlock Text="Jazz, Blues, Soul" FontSize="11" Foreground="#FFFFFFBB" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border 
+                                        x:Name="PlayIconJazz"
+                                        Width="36" Height="36"
+                                        CornerRadius="18"
+                                        Background="#FFFFFF"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Opacity="0">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="#8E2DE2" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <!-- Featured Card 5 - Electronic -->
+                            <Border 
+                                Width="160" Height="160" 
+                                CornerRadius="12"
+                                PointerEntered="FeaturedCard_PointerEntered"
+                                PointerExited="FeaturedCard_PointerExited"
+                                PointerPressed="FeaturedCard_PointerPressed"
+                                Tag="electronic">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FF8C42" Offset="0" />
+                                        <GradientStop Color="#FF5E5B" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid Padding="16">
+                                    <StackPanel VerticalAlignment="Bottom">
+                                        <TextBlock Text="Electrónica" FontSize="20" FontWeight="Bold" Foreground="White" />
+                                        <TextBlock Text="House, Techno, EDM" FontSize="11" Foreground="#FFFFFFBB" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border 
+                                        x:Name="PlayIconElectronic"
+                                        Width="36" Height="36"
+                                        CornerRadius="18"
+                                        Background="#FFFFFF"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Opacity="0">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="#FF8C42" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <!-- Featured Card 6 - Classical -->
+                            <Border 
+                                Width="160" Height="160" 
+                                CornerRadius="12"
+                                PointerEntered="FeaturedCard_PointerEntered"
+                                PointerExited="FeaturedCard_PointerExited"
+                                PointerPressed="FeaturedCard_PointerPressed"
+                                Tag="classical">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#2C3E50" Offset="0" />
+                                        <GradientStop Color="#4CA1AF" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid Padding="16">
+                                    <StackPanel VerticalAlignment="Bottom">
+                                        <TextBlock Text="Clásica" FontSize="20" FontWeight="Bold" Foreground="White" />
+                                        <TextBlock Text="Classical, Orchestra" FontSize="11" Foreground="#FFFFFFBB" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border 
+                                        x:Name="PlayIconClassical"
+                                        Width="36" Height="36"
+                                        CornerRadius="18"
+                                        Background="#FFFFFF"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Opacity="0">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="#2C3E50" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                        </StackPanel>
+                        </Border>
+
+                        <!-- Fade gradient overlay (right edge) -->
+                        <Border 
+                            HorizontalAlignment="Right"
+                            Width="60"
+                            IsHitTestVisible="False">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#00FAFAFA" Offset="0" />
+                                    <GradientStop Color="#FFFAFAFA" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- Skeleton Loading Grid -->
+                <Grid 
+                    x:Name="SkeletonLoadingGrid"
+                    Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Margin="0,8,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="175" />
+                        <RowDefinition Height="175" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Skeleton Card 1 -->
+                    <Border Grid.Column="0" Grid.Row="0" Background="White" CornerRadius="12" Margin="0,0,8,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Skeleton Card 2 -->
+                    <Border Grid.Column="1" Grid.Row="0" Background="White" CornerRadius="12" Margin="4,0,4,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Skeleton Card 3 -->
+                    <Border Grid.Column="2" Grid.Row="0" Background="White" CornerRadius="12" Margin="4,0,4,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Skeleton Card 4 -->
+                    <Border Grid.Column="3" Grid.Row="0" Background="White" CornerRadius="12" Margin="8,0,0,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Skeleton Card 5 -->
+                    <Border Grid.Column="0" Grid.Row="1" Background="White" CornerRadius="12" Margin="0,8,8,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Skeleton Card 6 -->
+                    <Border Grid.Column="1" Grid.Row="1" Background="White" CornerRadius="12" Margin="4,8,4,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Skeleton Card 7 -->
+                    <Border Grid.Column="2" Grid.Row="1" Background="White" CornerRadius="12" Margin="4,8,4,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Skeleton Card 8 -->
+                    <Border Grid.Column="3" Grid.Row="1" Background="White" CornerRadius="12" Margin="8,8,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="120" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="12,12,0,0" Background="{StaticResource SkeletonBaseBrush}">
+                                <Ellipse Width="48" Height="48" Fill="{StaticResource SkeletonHighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="10,10,10,12" Spacing="8">
+                                <Border Height="14" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" />
+                                <Border Height="10" Width="80" CornerRadius="4" Background="{StaticResource SkeletonBaseBrush}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Stations Grid -->
+                <ItemsRepeater 
+                    x:Name="StationsRepeater"
+                    ItemsSource="{x:Bind ViewModel.Stations}"
+                    Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                    Margin="0,8,0,24">
+                    
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout 
+                            MinItemWidth="150"
+                            MinItemHeight="175"
+                            MinRowSpacing="16"
+                            MinColumnSpacing="16"
+                            ItemsStretch="Fill" />
+                    </ItemsRepeater.Layout>
+
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Station Card - Redesigned -->
+                            <Border 
+                                x:Name="StationCardRoot"
+                                Background="White"
+                                CornerRadius="12"
+                                BorderBrush="{StaticResource AppleRedBrush}"
+                                BorderThickness="{Binding IsPlaying, Converter={StaticResource PlayingToBorderThicknessConverter}}"
+                                PointerEntered="StationCard_PointerEntered"
+                                PointerExited="StationCard_PointerExited"
+                                PointerPressed="StationCard_PointerPressed"
+                                Padding="0">
+                                
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="120" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Image Area -->
+                                    <Border 
+                                        Grid.Row="0"
+                                        CornerRadius="12,12,0,0"
+                                        Background="{StaticResource BackgroundTertiaryBrush}">
+                                        <Grid>
+                                            <!-- Station Logo (when available) -->
+                                            <Image 
+                                                Source="{Binding Favicon}"
+                                                Stretch="UniformToFill"
+                                                Visibility="{Binding Favicon, Converter={StaticResource EmptyStringToVisibilityConverter}, ConverterParameter=Invert}" />
+                                            
+                                            <!-- Placeholder with Initials (when no logo) -->
+                                            <Border 
+                                                Visibility="{Binding Favicon, Converter={StaticResource EmptyStringToVisibilityConverter}}"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Width="64"
+                                                Height="64"
+                                                CornerRadius="32"
+                                                Background="{Binding Name, Converter={StaticResource StringToColorBrushConverter}}">
+                                                <TextBlock 
+                                                    Text="{Binding Initials}"
+                                                    FontSize="22"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center" />
+                                            </Border>
+
+                                            <!-- Favorite Heart (top right) -->
+                                            <Border 
+                                                Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                Margin="0,8,8,0"
+                                                Width="24"
+                                                Height="24"
+                                                CornerRadius="12"
+                                                Background="#80FFFFFF">
+                                                <FontIcon 
+                                                    Glyph="&#xEB52;"
+                                                    FontSize="12"
+                                                    Foreground="{StaticResource AppleRedBrush}" />
+                                            </Border>
+
+                                            <!-- Now Playing Indicator (top left) -->
+                                            <Border 
+                                                Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Top"
+                                                Margin="8,8,0,0"
+                                                Padding="6,3"
+                                                CornerRadius="4"
+                                                Background="{StaticResource AppleRedBrush}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon 
+                                                        Glyph="&#xE995;"
+                                                        FontSize="10"
+                                                        Foreground="White" />
+                                                    <TextBlock 
+                                                        Text="EN VIVO"
+                                                        FontSize="9"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="White" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Play Button (hover state) -->
+                                            <Border 
+                                                x:Name="PlayButtonOverlay"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Bottom"
+                                                Margin="0,0,8,8"
+                                                Width="40"
+                                                Height="40"
+                                                CornerRadius="20"
+                                                Background="{StaticResource AppleRedBrush}"
+                                                Opacity="0">
+                                                <Border.Shadow>
+                                                    <ThemeShadow />
+                                                </Border.Shadow>
+                                                <FontIcon 
+                                                    Glyph="&#xE768;"
+                                                    FontSize="16"
+                                                    Foreground="White" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Station Info -->
+                                    <StackPanel 
+                                        Grid.Row="1" 
+                                        Padding="10,10,10,12"
+                                        Spacing="2">
+                                        
+                                        <!-- Station Name with Playing Dot -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <!-- Playing Dot -->
+                                            <Ellipse 
+                                                Grid.Column="0"
+                                                Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                Width="6"
+                                                Height="6"
+                                                Fill="{StaticResource AppleRedBrush}"
+                                                Margin="0,0,6,0"
+                                                VerticalAlignment="Center" />
+                                            
+                                            <TextBlock 
+                                                Grid.Column="1"
+                                                Text="{Binding Name}"
+                                                FontSize="13"
+                                                FontWeight="SemiBold"
+                                                Foreground="{StaticResource TextPrimaryBrush}"
+                                                TextTrimming="CharacterEllipsis"
+                                                MaxLines="2"
+                                                TextWrapping="Wrap" />
+                                        </Grid>
+                                        
+                                        <!-- Metadata: Country · Genre -->
                                         <TextBlock 
-                                            Text="{Binding Country}"
-                                            FontSize="14"
-                                            Foreground="{StaticResource TextSecondaryBrush}" />
-                                        <TextBlock 
-                                            Text="•"
-                                            FontSize="14"
-                                            Foreground="{StaticResource TextTertiaryBrush}" />
-                                        <TextBlock 
-                                            Text="{Binding Tags}"
-                                            FontSize="14"
+                                            Text="{Binding FormattedMetadata}"
+                                            FontSize="11"
                                             Foreground="{StaticResource TextSecondaryBrush}"
                                             TextTrimming="CharacterEllipsis"
                                             MaxLines="1" />
                                     </StackPanel>
-                                    <TextBlock 
-                                        FontSize="12"
-                                        Foreground="{StaticResource TextTertiaryBrush}">
-                                        <Run Text="{Binding Bitrate}" />
-                                        <Run Text="kbps" />
-                                    </TextBlock>
-                                </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
 
-                                <!-- Play Button -->
-                                <Button 
-                                    Grid.Column="2"
-                                    Tag="{Binding}"
-                                    Click="PlayButton_Click"
-                                    Style="{StaticResource PlayButtonStyle}"
-                                    VerticalAlignment="Center">
-                                    <FontIcon 
-                                        Glyph="&#xE768;" 
-                                        FontSize="18"
-                                        Margin="2,0,0,0" />
-                                </Button>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
-
-            <!-- Empty State -->
-            <StackPanel 
-                Grid.Row="3"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Visibility="{x:Bind ViewModel.Stations.Count, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}">
-                <Border
-                    Width="120"
-                    Height="120"
-                    CornerRadius="60"
-                    Background="{StaticResource BackgroundTertiaryBrush}"
+                <!-- Empty State -->
+                <StackPanel 
+                    x:Name="EmptyState"
                     HorizontalAlignment="Center"
-                    Margin="0,0,0,24">
-                    <FontIcon 
-                        Glyph="&#xE95A;"
-                        FontSize="48"
-                        Foreground="{StaticResource TextTertiaryBrush}" />
-                </Border>
-                <TextBlock 
-                    Text="No hay emisoras"
-                    Style="{StaticResource AppleTitleStyle}"
-                    HorizontalAlignment="Center" />
-                <TextBlock 
-                    Text="Busca o selecciona un filtro para comenzar"
-                    Style="{StaticResource AppleCaptionStyle}"
-                    HorizontalAlignment="Center"
-                    Margin="0,8,0,0" />
+                    VerticalAlignment="Center"
+                    Visibility="{x:Bind ViewModel.Stations.Count, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}"
+                    Margin="0,32,0,0">
+                    <Border
+                        Width="72"
+                        Height="72"
+                        CornerRadius="36"
+                        Background="{StaticResource BackgroundTertiaryBrush}"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,12">
+                        <FontIcon 
+                            Glyph="&#xE95A;"
+                            FontSize="28"
+                            Foreground="{StaticResource TextTertiaryBrush}" />
+                    </Border>
+                    <TextBlock 
+                        Text="Sin emisoras"
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        HorizontalAlignment="Center" />
+                    <TextBlock 
+                        Text="Busca o selecciona una categoría para comenzar"
+                        Style="{StaticResource AppleCaptionStyle}"
+                        HorizontalAlignment="Center"
+                        Margin="0,4,0,0" />
+                </StackPanel>
             </StackPanel>
+        </ScrollViewer>
+
+        <!-- SEARCH OVERLAY (Spotlight Style) -->
+        <Grid 
+            x:Name="SearchOverlay"
+            Grid.RowSpan="2"
+            Visibility="Collapsed"
+            Background="#80000000"
+            Tapped="SearchOverlay_Tapped">
+            
+            <Border 
+                x:Name="SearchPanel"
+                Background="White"
+                CornerRadius="12"
+                Width="520"
+                MaxHeight="500"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Center"
+                Margin="0,80,0,0"
+                Tapped="SearchPanel_Tapped">
+                
+                <Border.Shadow>
+                    <ThemeShadow />
+                </Border.Shadow>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Search Input -->
+                    <Border 
+                        Grid.Row="0"
+                        BorderBrush="#E5E5E5"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Search Icon / Loading -->
+                            <Grid Grid.Column="0" Margin="0,0,12,0">
+                                <FontIcon 
+                                    x:Name="SearchIcon"
+                                    Glyph="&#xE721;"
+                                    FontSize="18"
+                                    Foreground="{StaticResource TextSecondaryBrush}" />
+                                <ProgressRing 
+                                    x:Name="SearchSpinner"
+                                    Width="18"
+                                    Height="18"
+                                    Foreground="{StaticResource AppleRedBrush}"
+                                    Visibility="Collapsed" />
+                            </Grid>
+                            
+                            <TextBox 
+                                x:Name="SearchBox"
+                                Grid.Column="1"
+                                PlaceholderText="Buscar emisoras, países o géneros..."
+                                Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                TextChanged="SearchBox_TextChanged"
+                                KeyDown="SearchBox_KeyDown"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="16"
+                                VerticalAlignment="Center" />
+                            
+                            <!-- Close Button -->
+                            <Button 
+                                Grid.Column="2"
+                                Click="CloseSearch_Click"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="8"
+                                CornerRadius="6">
+                                <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" />
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Search Results / Suggestions -->
+                    <ScrollViewer 
+                        Grid.Row="1"
+                        VerticalScrollBarVisibility="Auto"
+                        MaxHeight="400">
+                        <StackPanel Padding="8">
+                            
+                            <!-- Quick Filters -->
+                            <StackPanel 
+                                x:Name="QuickFiltersPanel"
+                                Margin="8,8,8,16">
+                                <TextBlock 
+                                    Text="EXPLORAR"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextTertiaryBrush}"
+                                    Margin="0,0,0,10" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button 
+                                        Content="🔥 Populares"
+                                        Click="QuickFilter_Popular"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                    <Button 
+                                        Content="🆕 Nuevas"
+                                        Click="QuickFilter_New"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                    <Button 
+                                        Content="🇪🇸 España"
+                                        Click="QuickFilter_Spain"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                    <Button 
+                                        Content="🇺🇸 USA"
+                                        Click="QuickFilter_USA"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                    <Button 
+                                        Content="🇬🇧 UK"
+                                        Click="QuickFilter_UK"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                    <Button 
+                                        Content="Pop"
+                                        Tag="pop"
+                                        Click="QuickFilter_Genre"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                    <Button 
+                                        Content="Rock"
+                                        Tag="rock"
+                                        Click="QuickFilter_Genre"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                    <Button 
+                                        Content="Jazz"
+                                        Tag="jazz"
+                                        Click="QuickFilter_Genre"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                    <Button 
+                                        Content="Chill"
+                                        Tag="chill"
+                                        Click="QuickFilter_Genre"
+                                        Style="{StaticResource ApplePillButtonStyle}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Search Results List -->
+                            <StackPanel x:Name="SearchResultsPanel" Visibility="Collapsed">
+                                <TextBlock 
+                                    x:Name="ResultsCountText"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextTertiaryBrush}"
+                                    Margin="8,0,8,8" />
+                                
+                                <ItemsRepeater 
+                                    x:Name="SearchResultsRepeater"
+                                    ItemsSource="{x:Bind ViewModel.Stations}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Spacing="0" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button 
+                                                Click="SearchResult_Click"
+                                                Tag="{Binding}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Stretch"
+                                                Padding="8,6"
+                                                CornerRadius="6">
+                                                <Grid Height="36">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <!-- Station Icon -->
+                                                    <Border 
+                                                        Grid.Column="0"
+                                                        Width="32"
+                                                        Height="32"
+                                                        CornerRadius="6"
+                                                        Background="{StaticResource BackgroundTertiaryBrush}"
+                                                        Margin="0,0,10,0">
+                                                        <Grid>
+                                                            <Image 
+                                                                Source="{Binding Favicon}"
+                                                                Stretch="UniformToFill" />
+                                                            <FontIcon 
+                                                                Glyph="&#xE95A;"
+                                                                FontSize="14"
+                                                                Foreground="{StaticResource TextTertiaryBrush}" />
+                                                        </Grid>
+                                                    </Border>
+                                                    
+                                                    <!-- Station Info -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="0">
+                                                        <TextBlock 
+                                                            Text="{Binding Name}"
+                                                            FontSize="13"
+                                                            FontWeight="SemiBold"
+                                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            MaxLines="1" />
+                                                        <TextBlock 
+                                                            Text="{Binding FormattedMetadata}"
+                                                            FontSize="11"
+                                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            MaxLines="1" />
+                                                    </StackPanel>
+                                                    
+                                                    <!-- Play Icon -->
+                                                    <Border
+                                                        Grid.Column="2"
+                                                        Width="28"
+                                                        Height="28"
+                                                        CornerRadius="14"
+                                                        Background="Transparent"
+                                                        VerticalAlignment="Center">
+                                                        <FontIcon 
+                                                            Glyph="&#xE768;"
+                                                            FontSize="12"
+                                                            Foreground="{StaticResource AppleRedBrush}"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" />
+                                                    </Border>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
+
+                            <!-- No Results -->
+                            <StackPanel 
+                                x:Name="NoResultsPanel"
+                                Visibility="Collapsed"
+                                HorizontalAlignment="Center"
+                                Margin="0,32,0,32">
+                                <TextBlock 
+                                    Text="😔"
+                                    FontSize="32"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,0,0,12" />
+                                <TextBlock 
+                                    x:Name="NoResultsText"
+                                    FontSize="14"
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    TextAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Footer with Keyboard Shortcuts -->
+                    <Border 
+                        Grid.Row="2"
+                        BorderBrush="#E5E5E5"
+                        BorderThickness="0,1,0,0"
+                        Padding="16,10"
+                        Background="{StaticResource BackgroundTertiaryBrush}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Border Background="#E0E0E0" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="↑↓" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Medium" />
+                                </Border>
+                                <TextBlock Text="navegar" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Border Background="#E0E0E0" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="↵" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Medium" />
+                                </Border>
+                                <TextBlock Text="reproducir" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Border Background="#E0E0E0" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="esc" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Medium" />
+                                </Border>
+                                <TextBlock Text="cerrar" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
         </Grid>
-    </ScrollViewer>
+    </Grid>
 </Page>

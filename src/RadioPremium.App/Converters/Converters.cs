@@ -1,5 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI;
+using Windows.UI;
 
 namespace RadioPremium.App.Converters;
 
@@ -143,6 +146,75 @@ public sealed class NullToBoolConverter : IValueConverter
         if (invert) isNull = !isNull;
 
         return !isNull; // Returns true if not null
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Generates a color brush from a string (for placeholder backgrounds)
+/// </summary>
+public sealed class StringToColorBrushConverter : IValueConverter
+{
+    private static readonly Color[] _colors = new[]
+    {
+        Color.FromArgb(255, 255, 107, 107),  // Coral
+        Color.FromArgb(255, 78, 205, 196),   // Turquesa
+        Color.FromArgb(255, 69, 183, 209),   // Celeste
+        Color.FromArgb(255, 150, 206, 180),  // Menta
+        Color.FromArgb(255, 255, 177, 66),   // Amarillo
+        Color.FromArgb(255, 221, 160, 221),  // Lavanda
+        Color.FromArgb(255, 152, 216, 200),  // Verde agua
+        Color.FromArgb(255, 129, 140, 248),  // Índigo
+    };
+
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        var str = value as string ?? "";
+        var hash = Math.Abs(str.GetHashCode());
+        var color = _colors[hash % _colors.Length];
+        return new SolidColorBrush(color);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts empty/null string to Visibility (shows placeholder when no image)
+/// </summary>
+public sealed class EmptyStringToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        var isEmpty = string.IsNullOrWhiteSpace(value as string);
+        var invert = parameter is string s && s.Equals("Invert", StringComparison.OrdinalIgnoreCase);
+
+        if (invert) isEmpty = !isEmpty;
+
+        return isEmpty ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts boolean IsPlaying to border thickness (for playing indicator)
+/// </summary>
+public sealed class PlayingToBorderThicknessConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        var isPlaying = value is bool b && b;
+        return new Thickness(isPlaying ? 2 : 0);
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)
