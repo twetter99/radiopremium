@@ -11,13 +11,11 @@ using RadioPremium.Core.ViewModels;
 namespace RadioPremium.App.Controls;
 
 /// <summary>
-/// Premium Player bar control with Apple-like design
+/// Premium Player bar control with Spotify-like design
 /// </summary>
 public sealed partial class PlayerBar : UserControl
 {
     public PlayerViewModel ViewModel { get; }
-    private DispatcherTimer? _equalizerTimer;
-    private Random _random = new();
 
     public PlayerBar()
     {
@@ -27,24 +25,6 @@ public sealed partial class PlayerBar : UserControl
 
         // Update UI when properties change
         ViewModel.PropertyChanged += ViewModel_PropertyChanged;
-        
-        // Initialize equalizer animation timer
-        InitializeEqualizerAnimation();
-    }
-
-    private void InitializeEqualizerAnimation()
-    {
-        _equalizerTimer = new DispatcherTimer();
-        _equalizerTimer.Interval = TimeSpan.FromMilliseconds(200);
-        _equalizerTimer.Tick += EqualizerTimer_Tick;
-    }
-
-    private void EqualizerTimer_Tick(object? sender, object e)
-    {
-        // Animate equalizer bars with random heights
-        EqBar1.Height = 4 + _random.Next(10);
-        EqBar2.Height = 4 + _random.Next(10);
-        EqBar3.Height = 4 + _random.Next(10);
     }
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -76,20 +56,13 @@ public sealed partial class PlayerBar : UserControl
     {
         var isPlaying = ViewModel.PlaybackState == PlaybackState.Playing;
         
-        // Show/hide equalizer
-        EqualizerBars.Visibility = isPlaying ? Visibility.Visible : Visibility.Collapsed;
-        
-        // Start/stop animation
+        // Show/hide glow effect
         if (isPlaying)
         {
-            _equalizerTimer?.Start();
-            // Show glow
             ArtworkGlow.Opacity = 0.3;
         }
         else
         {
-            _equalizerTimer?.Stop();
-            // Hide glow
             ArtworkGlow.Opacity = 0;
         }
     }

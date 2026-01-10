@@ -6,6 +6,15 @@
     xmlns:views="using:RadioPremium.App.Views"
     Title="Radio Premium">
 
-    <views:ShellPage x:Name="ShellFrame" />
+    <Grid Background="#121212">
+        <!-- Title Bar Drag Region (invisible, just for dragging) -->
+        <Border x:Name="AppTitleBar" 
+                Height="48" 
+                VerticalAlignment="Top" 
+                Background="Transparent" />
+        
+        <!-- Main Content - Full window -->
+        <views:ShellPage x:Name="ShellFrame" />
+    </Grid>
 
 </Window>

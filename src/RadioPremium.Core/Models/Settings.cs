@@ -13,6 +13,7 @@ public sealed class AppSettings
     public bool ShowNotifications { get; set; } = true;
     public string DefaultCountry { get; set; } = "ES";
     public int SearchResultLimit { get; set; } = 50;
+    public bool MusicOnlyFilter { get; set; } = true; // Only show music stations
 }
 
 /// <summary>

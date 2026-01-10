@@ -18,6 +18,8 @@ public partial class App : Application
     private Window? _window;
 
     public static IServiceProvider Services { get; private set; } = null!;
+    
+    public static Window? MainWindow => ((App)Current)._window;
 
     public static T GetService<T>() where T : class => Services.GetRequiredService<T>();
 

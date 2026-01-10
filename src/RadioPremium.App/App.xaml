@@ -9,42 +9,52 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Apple Music Color Palette -->
-            <Color x:Key="AppleRed">#FA2D48</Color>
-            <Color x:Key="ApplePink">#FC3C70</Color>
-            <Color x:Key="AppleOrange">#FF9500</Color>
+            <!-- Spotify Color Palette -->
+            <Color x:Key="SpotifyGreen">#1DB954</Color>
+            <Color x:Key="SpotifyGreenLight">#1ED760</Color>
+            <Color x:Key="AccentColor">#1DB954</Color>
+            <Color x:Key="AppleRed">#1DB954</Color>
+            <Color x:Key="ApplePink">#1ED760</Color>
+            <Color x:Key="AppleOrange">#F59B23</Color>
             <Color x:Key="AppleYellow">#FFCC00</Color>
-            <Color x:Key="AppleGreen">#34C759</Color>
-            <Color x:Key="AppleTeal">#30D5C8</Color>
-            <Color x:Key="AppleBlue">#007AFF</Color>
-            <Color x:Key="ApplePurple">#BF5AF2</Color>
+            <Color x:Key="AppleGreen">#1DB954</Color>
+            <Color x:Key="AppleTeal">#1DB954</Color>
+            <Color x:Key="AppleBlue">#4687D6</Color>
+            <Color x:Key="ApplePurple">#AF2896</Color>
             <Color x:Key="AppleIndigo">#5856D6</Color>
             
-            <!-- Gradient Colors for Cards -->
-            <Color x:Key="GradientPink1">#FF6B9D</Color>
-            <Color x:Key="GradientPink2">#C44569</Color>
-            <Color x:Key="GradientOrange1">#FF8C42</Color>
-            <Color x:Key="GradientOrange2">#FF5E5B</Color>
-            <Color x:Key="GradientBlue1">#667EEA</Color>
-            <Color x:Key="GradientBlue2">#764BA2</Color>
-            <Color x:Key="GradientGreen1">#11998E</Color>
-            <Color x:Key="GradientGreen2">#38EF7D</Color>
-            <Color x:Key="GradientPurple1">#8E2DE2</Color>
-            <Color x:Key="GradientPurple2">#4A00E0</Color>
+            <!-- Gradient Colors for Cards (Spotify style) -->
+            <Color x:Key="GradientPink1">#E91E63</Color>
+            <Color x:Key="GradientPink2">#9C27B0</Color>
+            <Color x:Key="GradientOrange1">#FF5722</Color>
+            <Color x:Key="GradientOrange2">#FF9800</Color>
+            <Color x:Key="GradientBlue1">#2196F3</Color>
+            <Color x:Key="GradientBlue2">#3F51B5</Color>
+            <Color x:Key="GradientGreen1">#1DB954</Color>
+            <Color x:Key="GradientGreen2">#1ED760</Color>
+            <Color x:Key="GradientPurple1">#9C27B0</Color>
+            <Color x:Key="GradientPurple2">#673AB7</Color>
             
-            <!-- Background Colors - Apple Music Style -->
-            <Color x:Key="BackgroundPrimary">#FFFFFF</Color>
-            <Color x:Key="BackgroundSecondary">#FAFAFA</Color>
-            <Color x:Key="BackgroundTertiary">#F2F2F7</Color>
-            <Color x:Key="SidebarBackground">#FBFBFB</Color>
+            <!-- Background Colors - Spotify Dark Theme -->
+            <Color x:Key="BackgroundPrimary">#121212</Color>
+            <Color x:Key="BackgroundSecondary">#181818</Color>
+            <Color x:Key="BackgroundTertiary">#282828</Color>
+            <Color x:Key="BackgroundElevated">#242424</Color>
+            <Color x:Key="BackgroundHighlight">#333333</Color>
+            <Color x:Key="SidebarBackground">#000000</Color>
+            <Color x:Key="CardBackground">#181818</Color>
+            <Color x:Key="CardHoverBackground">#282828</Color>
             
-            <!-- Text Colors -->
-            <Color x:Key="TextPrimary">#000000</Color>
-            <Color x:Key="TextSecondary">#8E8E93</Color>
-            <Color x:Key="TextTertiary">#C7C7CC</Color>
+            <!-- Text Colors - Spotify -->
+            <Color x:Key="TextPrimary">#FFFFFF</Color>
+            <Color x:Key="TextSecondary">#B3B3B3</Color>
+            <Color x:Key="TextTertiary">#727272</Color>
+            <Color x:Key="TextSubdued">#535353</Color>
 
             <!-- Brushes -->
-            <SolidColorBrush x:Key="AppleRedBrush" Color="{StaticResource AppleRed}" />
+            <SolidColorBrush x:Key="SpotifyGreenBrush" Color="{StaticResource SpotifyGreen}" />
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+            <SolidColorBrush x:Key="AppleRedBrush" Color="{StaticResource SpotifyGreen}" />
             <SolidColorBrush x:Key="ApplePinkBrush" Color="{StaticResource ApplePink}" />
             <SolidColorBrush x:Key="AppleOrangeBrush" Color="{StaticResource AppleOrange}" />
             <SolidColorBrush x:Key="AppleGreenBrush" Color="{StaticResource AppleGreen}" />
@@ -54,56 +64,63 @@
             <SolidColorBrush x:Key="BackgroundPrimaryBrush" Color="{StaticResource BackgroundPrimary}" />
             <SolidColorBrush x:Key="BackgroundSecondaryBrush" Color="{StaticResource BackgroundSecondary}" />
             <SolidColorBrush x:Key="BackgroundTertiaryBrush" Color="{StaticResource BackgroundTertiary}" />
+            <SolidColorBrush x:Key="BackgroundElevatedBrush" Color="{StaticResource BackgroundElevated}" />
+            <SolidColorBrush x:Key="BackgroundHighlightBrush" Color="{StaticResource BackgroundHighlight}" />
             <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="{StaticResource SidebarBackground}" />
+            <SolidColorBrush x:Key="CardBackgroundBrush" Color="{StaticResource CardBackground}" />
+            <SolidColorBrush x:Key="CardHoverBackgroundBrush" Color="{StaticResource CardHoverBackground}" />
             <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}" />
             <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}" />
             <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}" />
+            <SolidColorBrush x:Key="TextSubduedBrush" Color="{StaticResource TextSubdued}" />
 
-            <!-- Navigation Button Style (Apple Music Sidebar) -->
+            <!-- Navigation Button Style (Spotify Sidebar) -->
             <Style x:Key="NavButtonStyle" TargetType="Button">
                 <Setter Property="Background" Value="Transparent" />
-                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                 <Setter Property="Padding" Value="12,10" />
-                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="CornerRadius" Value="6" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontWeight" Value="SemiBold" />
             </Style>
 
             <!-- Navigation Button Active -->
             <Style x:Key="NavButtonActiveStyle" TargetType="Button">
-                <Setter Property="Background" Value="#E8E8ED" />
+                <Setter Property="Background" Value="{StaticResource BackgroundTertiaryBrush}" />
                 <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                 <Setter Property="Padding" Value="12,10" />
-                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="CornerRadius" Value="6" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="FontSize" Value="13" />
-                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontWeight" Value="Bold" />
             </Style>
 
-            <!-- Apple Music Primary Button (Red) -->
+            <!-- Spotify Primary Button (Green) -->
             <Style x:Key="ApplePrimaryButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource AppleRedBrush}" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="CornerRadius" Value="8" />
-                <Setter Property="Padding" Value="16,8" />
-                <Setter Property="FontWeight" Value="Medium" />
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Background" Value="{StaticResource SpotifyGreenBrush}" />
+                <Setter Property="Foreground" Value="Black" />
+                <Setter Property="CornerRadius" Value="500" />
+                <Setter Property="Padding" Value="32,12" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="BorderThickness" Value="0" />
             </Style>
 
-            <!-- Apple Music Secondary Button -->
+            <!-- Spotify Secondary Button -->
             <Style x:Key="AppleSecondaryButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource BackgroundTertiaryBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource AppleRedBrush}" />
-                <Setter Property="CornerRadius" Value="8" />
-                <Setter Property="Padding" Value="16,8" />
-                <Setter Property="FontWeight" Value="Medium" />
-                <Setter Property="FontSize" Value="13" />
-                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                <Setter Property="CornerRadius" Value="500" />
+                <Setter Property="Padding" Value="32,12" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="BorderBrush" Value="{StaticResource TextSubduedBrush}" />
             </Style>
 
             <!-- Apple Music Icon Button -->
@@ -172,20 +189,21 @@
                 <Setter Property="MinHeight" Value="32" />
             </Style>
 
-            <!-- Apple Music Card -->
+            <!-- Spotify Card -->
             <Style x:Key="AppleCardStyle" TargetType="Border">
-                <Setter Property="Background" Value="White" />
-                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="0" />
             </Style>
 
-            <!-- Apple Music Search Box -->
+            <!-- Spotify Search Box -->
             <Style x:Key="AppleSearchBoxStyle" TargetType="TextBox">
                 <Setter Property="Background" Value="{StaticResource BackgroundTertiaryBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="CornerRadius" Value="8" />
-                <Setter Property="Padding" Value="12,10" />
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="CornerRadius" Value="500" />
+                <Setter Property="Padding" Value="16,12" />
+                <Setter Property="FontSize" Value="14" />
             </Style>
 
             <!-- Large Title (Apple Music "Inicio") -->
@@ -224,8 +242,8 @@
 
             <!-- Play Button Style -->
             <Style x:Key="PlayButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource AppleRedBrush}" />
-                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Background" Value="{StaticResource SpotifyGreenBrush}" />
+                <Setter Property="Foreground" Value="Black" />
                 <Setter Property="Width" Value="32" />
                 <Setter Property="Height" Value="32" />
                 <Setter Property="CornerRadius" Value="16" />
@@ -235,11 +253,11 @@
 
             <!-- Large Play Button -->
             <Style x:Key="LargePlayButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource AppleRedBrush}" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="Width" Value="48" />
-                <Setter Property="Height" Value="48" />
-                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="Background" Value="{StaticResource SpotifyGreenBrush}" />
+                <Setter Property="Foreground" Value="Black" />
+                <Setter Property="Width" Value="56" />
+                <Setter Property="Height" Value="56" />
+                <Setter Property="CornerRadius" Value="28" />
                 <Setter Property="Padding" Value="0" />
                 <Setter Property="BorderThickness" Value="0" />
             </Style>
@@ -249,8 +267,8 @@
             <Style x:Key="IconButtonStyle" BasedOn="{StaticResource AppleIconButtonStyle}" TargetType="Button" />
 
             <!-- Skeleton Loader Colors -->
-            <Color x:Key="SkeletonBase">#E8E8E8</Color>
-            <Color x:Key="SkeletonHighlight">#F5F5F5</Color>
+            <Color x:Key="SkeletonBase">#282828</Color>
+            <Color x:Key="SkeletonHighlight">#333333</Color>
             <SolidColorBrush x:Key="SkeletonBaseBrush" Color="{StaticResource SkeletonBase}" />
             <SolidColorBrush x:Key="SkeletonHighlightBrush" Color="{StaticResource SkeletonHighlight}" />
 

@@ -32,6 +32,9 @@ public partial class SettingsViewModel : ObservableObject
     private string _defaultCountry = "ES";
 
     [ObservableProperty]
+    private bool _musicOnlyFilter = true;
+
+    [ObservableProperty]
     private bool _isSpotifyConnected;
 
     [ObservableProperty]
@@ -69,6 +72,7 @@ public partial class SettingsViewModel : ObservableObject
         CaptureSeconds = settings.CaptureSeconds;
         ShowNotifications = settings.ShowNotifications;
         DefaultCountry = settings.DefaultCountry;
+        MusicOnlyFilter = settings.MusicOnlyFilter;
     }
 
     [RelayCommand]
@@ -81,6 +85,7 @@ public partial class SettingsViewModel : ObservableObject
         settings.CaptureSeconds = CaptureSeconds;
         settings.ShowNotifications = ShowNotifications;
         settings.DefaultCountry = DefaultCountry;
+        settings.MusicOnlyFilter = MusicOnlyFilter;
 
         await _settingsService.SaveAsync();
     }

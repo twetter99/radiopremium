@@ -27,7 +27,7 @@
         <Border 
             Grid.Row="0"
             Background="{StaticResource BackgroundSecondaryBrush}"
-            Padding="24,12,24,8">
+            Padding="24,40,24,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -63,14 +63,14 @@
                             FontSize="14"
                             Foreground="{StaticResource TextSecondaryBrush}" />
                         <Border 
-                            Background="#E5E5E5"
+                            Background="{StaticResource BackgroundHighlightBrush}"
                             CornerRadius="4"
                             Padding="6,2"
                             Margin="8,0,0,0">
                             <TextBlock 
                                 Text="⌘K"
                                 FontSize="11"
-                                Foreground="{StaticResource TextTertiaryBrush}" />
+                                Foreground="{StaticResource TextSecondaryBrush}" />
                         </Border>
                     </StackPanel>
                 </Button>
@@ -90,7 +90,7 @@
         <Border 
             Grid.Row="1"
             Background="{StaticResource BackgroundSecondaryBrush}"
-            BorderBrush="#E5E5E5"
+            BorderBrush="{StaticResource BackgroundHighlightBrush}"
             BorderThickness="0,0,0,1"
             Padding="24,0,24,0">
             <StackPanel Orientation="Horizontal" Spacing="24">
@@ -286,12 +286,12 @@
                     <Grid Grid.Row="1">
                         <!-- Clip container for overflow -->
                         <Border x:Name="FeaturedContainer" Padding="0,0,0,8">
-                            <StackPanel x:Name="FeaturedCardsPanel" Orientation="Horizontal" Spacing="16">
+                            <StackPanel x:Name="FeaturedCardsPanel" Orientation="Horizontal" Spacing="12">
                             
                             <!-- Featured Card 1 - Pop -->
                             <Border 
-                                Width="160" Height="160" 
-                                CornerRadius="12"
+                                Width="140" Height="140" 
+                                CornerRadius="8"
                                 PointerEntered="FeaturedCard_PointerEntered"
                                 PointerExited="FeaturedCard_PointerExited"
                                 PointerPressed="FeaturedCard_PointerPressed"
@@ -323,8 +323,8 @@
 
                             <!-- Featured Card 2 - Chill -->
                             <Border 
-                                Width="160" Height="160" 
-                                CornerRadius="12"
+                                Width="140" Height="140" 
+                                CornerRadius="8"
                                 PointerEntered="FeaturedCard_PointerEntered"
                                 PointerExited="FeaturedCard_PointerExited"
                                 PointerPressed="FeaturedCard_PointerPressed"
@@ -355,8 +355,8 @@
 
                             <!-- Featured Card 3 - Rock -->
                             <Border 
-                                Width="160" Height="160" 
-                                CornerRadius="12"
+                                Width="140" Height="140" 
+                                CornerRadius="8"
                                 PointerEntered="FeaturedCard_PointerEntered"
                                 PointerExited="FeaturedCard_PointerExited"
                                 PointerPressed="FeaturedCard_PointerPressed"
@@ -387,8 +387,8 @@
 
                             <!-- Featured Card 4 - Jazz -->
                             <Border 
-                                Width="160" Height="160" 
-                                CornerRadius="12"
+                                Width="140" Height="140" 
+                                CornerRadius="8"
                                 PointerEntered="FeaturedCard_PointerEntered"
                                 PointerExited="FeaturedCard_PointerExited"
                                 PointerPressed="FeaturedCard_PointerPressed"
@@ -419,8 +419,8 @@
 
                             <!-- Featured Card 5 - Electronic -->
                             <Border 
-                                Width="160" Height="160" 
-                                CornerRadius="12"
+                                Width="140" Height="140" 
+                                CornerRadius="8"
                                 PointerEntered="FeaturedCard_PointerEntered"
                                 PointerExited="FeaturedCard_PointerExited"
                                 PointerPressed="FeaturedCard_PointerPressed"
@@ -451,8 +451,8 @@
 
                             <!-- Featured Card 6 - Classical -->
                             <Border 
-                                Width="160" Height="160" 
-                                CornerRadius="12"
+                                Width="140" Height="140" 
+                                CornerRadius="8"
                                 PointerEntered="FeaturedCard_PointerEntered"
                                 PointerExited="FeaturedCard_PointerExited"
                                 PointerPressed="FeaturedCard_PointerPressed"
@@ -661,10 +661,10 @@
                     
                     <ItemsRepeater.Layout>
                         <UniformGridLayout 
-                            MinItemWidth="150"
-                            MinItemHeight="175"
-                            MinRowSpacing="16"
-                            MinColumnSpacing="16"
+                            MinItemWidth="140"
+                            MinItemHeight="165"
+                            MinRowSpacing="12"
+                            MinColumnSpacing="12"
                             ItemsStretch="Fill" />
                     </ItemsRepeater.Layout>
 
@@ -673,9 +673,9 @@
                             <!-- Station Card - Redesigned -->
                             <Border 
                                 x:Name="StationCardRoot"
-                                Background="White"
-                                CornerRadius="12"
-                                BorderBrush="{StaticResource AppleRedBrush}"
+                                Background="{StaticResource CardBackgroundBrush}"
+                                CornerRadius="8"
+                                BorderBrush="{StaticResource SpotifyGreenBrush}"
                                 BorderThickness="{Binding IsPlaying, Converter={StaticResource PlayingToBorderThicknessConverter}}"
                                 PointerEntered="StationCard_PointerEntered"
                                 PointerExited="StationCard_PointerExited"
@@ -684,7 +684,7 @@
                                 
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="120" />
+                                        <RowDefinition Height="100" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
 
@@ -865,12 +865,12 @@
             x:Name="SearchOverlay"
             Grid.RowSpan="2"
             Visibility="Collapsed"
-            Background="#80000000"
+            Background="#CC000000"
             Tapped="SearchOverlay_Tapped">
             
             <Border 
                 x:Name="SearchPanel"
-                Background="White"
+                Background="{StaticResource CardBackgroundBrush}"
                 CornerRadius="12"
                 Width="520"
                 MaxHeight="500"
@@ -893,7 +893,7 @@
                     <!-- Search Input -->
                     <Border 
                         Grid.Row="0"
-                        BorderBrush="#E5E5E5"
+                        BorderBrush="{StaticResource TextSubduedBrush}"
                         BorderThickness="0,0,0,1"
                         Padding="16,12">
                         <Grid>
@@ -926,6 +926,7 @@
                                 TextChanged="SearchBox_TextChanged"
                                 KeyDown="SearchBox_KeyDown"
                                 Background="Transparent"
+                                Foreground="{StaticResource TextPrimaryBrush}"
                                 BorderThickness="0"
                                 FontSize="16"
                                 VerticalAlignment="Center" />
@@ -1122,28 +1123,28 @@
                     <!-- Footer with Keyboard Shortcuts -->
                     <Border 
                         Grid.Row="2"
-                        BorderBrush="#E5E5E5"
+                        BorderBrush="{StaticResource TextSubduedBrush}"
                         BorderThickness="0,1,0,0"
                         Padding="16,10"
-                        Background="{StaticResource BackgroundTertiaryBrush}">
+                        Background="{StaticResource BackgroundSecondaryBrush}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Border Background="#E0E0E0" CornerRadius="4" Padding="6,2">
-                                    <TextBlock Text="↑↓" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Medium" />
+                                <Border Background="{StaticResource BackgroundTertiaryBrush}" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="↑↓" FontSize="11" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium" />
                                 </Border>
-                                <TextBlock Text="navegar" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="navegar" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Border Background="#E0E0E0" CornerRadius="4" Padding="6,2">
-                                    <TextBlock Text="↵" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Medium" />
+                                <Border Background="{StaticResource BackgroundTertiaryBrush}" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="↵" FontSize="11" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium" />
                                 </Border>
-                                <TextBlock Text="reproducir" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="reproducir" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Border Background="#E0E0E0" CornerRadius="4" Padding="6,2">
-                                    <TextBlock Text="esc" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Medium" />
+                                <Border Background="{StaticResource BackgroundTertiaryBrush}" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="esc" FontSize="11" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium" />
                                 </Border>
-                                <TextBlock Text="cerrar" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="cerrar" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                         </StackPanel>
                     </Border>

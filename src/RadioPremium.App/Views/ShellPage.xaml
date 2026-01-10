@@ -25,25 +25,28 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Radio Premium Sidebar - Redesigned -->
+            <!-- Radio Premium Sidebar - Spotify Dark -->
             <Border 
                 Grid.Column="0"
                 Background="{StaticResource SidebarBackgroundBrush}"
-                BorderBrush="#E8E8E8"
-                BorderThickness="0,0,0.5,0">
+                BorderBrush="#282828"
+                BorderThickness="0,0,1,0">
                 
+                <ScrollViewer 
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- App Logo/Brand -->
-                    <StackPanel Grid.Row="0" Margin="16,20,16,16">
+                    <!-- App Logo/Brand - with top padding for title bar -->
+                    <StackPanel Grid.Row="0" Margin="16,48,16,16">
                         <TextBlock 
                             Text="Radio Premium"
                             FontSize="18"
@@ -107,7 +110,7 @@
                                         Glyph="&#xE8D6;" 
                                         FontSize="16"
                                         Foreground="{StaticResource AppleOrangeBrush}" />
-                                    <TextBlock Text="Por género" FontSize="13" />
+                                    <TextBlock Text="Por género" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
                                 </StackPanel>
                             </Button>
 
@@ -120,7 +123,7 @@
                                         Glyph="&#xE909;" 
                                         FontSize="16"
                                         Foreground="{StaticResource AppleBlueBrush}" />
-                                    <TextBlock Text="Por país" FontSize="13" />
+                                    <TextBlock Text="Por país" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
                                 </StackPanel>
                             </Button>
 
@@ -133,7 +136,7 @@
                                         Glyph="&#xE8B1;" 
                                         FontSize="16"
                                         Foreground="{StaticResource ApplePinkBrush}" />
-                                    <TextBlock Text="Tendencias" FontSize="13" />
+                                    <TextBlock Text="Tendencias" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -159,8 +162,8 @@
                                         <FontIcon 
                                             Glyph="&#xEB52;" 
                                             FontSize="16"
-                                            Foreground="{StaticResource AppleRedBrush}" />
-                                        <TextBlock Text="Favoritas" FontSize="13" />
+                                            Foreground="{StaticResource SpotifyGreenBrush}" />
+                                        <TextBlock Text="Favoritas" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
                                     </StackPanel>
                                     <!-- Badge de conteo -->
                                     <Border 
@@ -186,7 +189,7 @@
                                         Glyph="&#xE81C;" 
                                         FontSize="16"
                                         Foreground="{StaticResource ApplePurpleBrush}" />
-                                    <TextBlock Text="Recientes" FontSize="13" />
+                                    <TextBlock Text="Recientes" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
                                 </StackPanel>
                             </Button>
 
@@ -197,8 +200,8 @@
                                     <FontIcon 
                                         Glyph="&#xE8D6;" 
                                         FontSize="16"
-                                        Foreground="{StaticResource AppleGreenBrush}" />
-                                    <TextBlock Text="Identificadas" FontSize="13" />
+                                        Foreground="{StaticResource SpotifyGreenBrush}" />
+                                    <TextBlock Text="Identificadas" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -216,7 +219,7 @@
                                     Glyph="&#xE713;" 
                                     FontSize="16"
                                     Foreground="{StaticResource TextSecondaryBrush}" />
-                                <TextBlock Text="Ajustes" FontSize="13" />
+                                <TextBlock Text="Ajustes" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
                             </StackPanel>
                         </Button>
 
@@ -247,9 +250,9 @@
                                     Grid.Column="1"
                                     x:Name="SpotifyStatusText" 
                                     Text="Spotify"
-                                    FontSize="13"
+                                    FontSize="14"
                                     VerticalAlignment="Center"
-                                    Foreground="{StaticResource TextPrimaryBrush}" />
+                                    Foreground="{StaticResource TextSecondaryBrush}" />
                                 <!-- Status indicator -->
                                 <Ellipse
                                     Grid.Column="2"
@@ -262,6 +265,7 @@
                         </Button>
                     </StackPanel>
                 </Grid>
+                </ScrollViewer>
             </Border>
 
             <!-- Main Content Frame -->
@@ -275,46 +279,36 @@
             x:Name="PlayerBarControl"
             Grid.Row="1" />
 
-        <!-- Track Identified Modal (Apple Music Style) -->
+        <!-- Track Identified Modal (Spotify Style) -->
         <Grid 
             x:Name="TrackIdentifiedOverlay"
             Grid.ColumnSpan="2"
             Grid.RowSpan="2"
             Visibility="Collapsed"
-            Background="#80000000">
+            Background="#CC000000"
+            Padding="0,48,0,0">
             
             <Border 
                 x:Name="TrackIdentifiedCard"
-                Background="White"
+                Background="{StaticResource CardBackgroundBrush}"
                 CornerRadius="16"
                 Width="380"
                 MaxHeight="600"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center">
                 
-                <ScrollViewer 
-                    VerticalScrollBarVisibility="Auto"
-                    Padding="24">
-                    <StackPanel Spacing="20">
-                        <!-- Header with close button -->
-                        <Grid>
+                <Grid>
+                    <ScrollViewer 
+                        VerticalScrollBarVisibility="Auto"
+                        Padding="24">
+                        <StackPanel Spacing="20">
+                            <!-- Header -->
                             <TextBlock 
                                 Text="🎵 Canción identificada"
                                 FontSize="13"
                                 Foreground="{StaticResource TextSecondaryBrush}"
-                                HorizontalAlignment="Center" />
-                            <Button 
-                                Click="CloseTrackCard_Click"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Padding="4"
-                                CornerRadius="12"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Top"
-                                Margin="0,-8,-8,0">
-                                <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" />
-                            </Button>
-                        </Grid>
+                                HorizontalAlignment="Center"
+                                Margin="0,8,0,0" />
                         
                         <!-- Album Artwork -->
                         <Border 
@@ -350,7 +344,7 @@
                             <TextBlock 
                                 x:Name="TrackArtist"
                                 FontSize="16"
-                                Foreground="{StaticResource AppleRedBrush}"
+                                Foreground="{StaticResource SpotifyGreenBrush}"
                                 TextAlignment="Center"
                                 TextWrapping="Wrap"
                                 MaxWidth="320" />
@@ -369,32 +363,41 @@
                             <Button 
                                 x:Name="AddToSpotifyButton"
                                 Click="AddToSpotify_Click"
-                                Background="#1DB954"
-                                Foreground="White"
+                                Background="{StaticResource SpotifyGreenBrush}"
+                                Foreground="Black"
                                 CornerRadius="20"
                                 Padding="24,12"
                                 BorderThickness="0"
                                 HorizontalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <FontIcon Glyph="&#xE710;" FontSize="16" />
-                                    <TextBlock Text="Añadir a Spotify" FontSize="14" FontWeight="SemiBold" />
+                                    <TextBlock Text="Buscar en Spotify" FontSize="14" FontWeight="SemiBold" />
                             </StackPanel>
                         </Button>
                         
                         <!-- Secondary actions -->
                         <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Center">
                             <Button 
-                                Style="{StaticResource AppleIconButtonStyle}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="8"
+                                CornerRadius="20"
                                 ToolTipService.ToolTip="Me gusta">
                                 <FontIcon Glyph="&#xE735;" FontSize="18" Foreground="{StaticResource TextSecondaryBrush}" />
                             </Button>
                             <Button 
-                                Style="{StaticResource AppleIconButtonStyle}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="8"
+                                CornerRadius="20"
                                 ToolTipService.ToolTip="Compartir">
                                 <FontIcon Glyph="&#xE72D;" FontSize="18" Foreground="{StaticResource TextSecondaryBrush}" />
                             </Button>
                             <Button 
-                                Style="{StaticResource AppleIconButtonStyle}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="8"
+                                CornerRadius="20"
                                 ToolTipService.ToolTip="Más opciones">
                                 <FontIcon Glyph="&#xE712;" FontSize="18" Foreground="{StaticResource TextSecondaryBrush}" />
                             </Button>
@@ -402,6 +405,22 @@
                     </StackPanel>
                 </StackPanel>
                 </ScrollViewer>
+                
+                <!-- Close button - on top of content -->
+                <Button 
+                    Click="CloseTrackCard_Click"
+                    Background="#3C3C3C"
+                    BorderThickness="0"
+                    Padding="8"
+                    CornerRadius="14"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,12,12,0"
+                    Width="28"
+                    Height="28">
+                    <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource TextPrimaryBrush}" />
+                </Button>
+                </Grid>
             </Border>
         </Grid>
 
@@ -411,9 +430,10 @@
             Grid.ColumnSpan="2"
             Grid.RowSpan="2"
             Visibility="Collapsed"
-            Background="#80000000">
+            Background="#CC000000"
+            Padding="0,48,0,0">
             <Border 
-                Background="White"
+                Background="{StaticResource CardBackgroundBrush}"
                 CornerRadius="16"
                 Width="280"
                 VerticalAlignment="Center"
@@ -425,7 +445,7 @@
                         IsActive="True"
                         Width="48"
                         Height="48"
-                        Foreground="{StaticResource AppleRedBrush}" />
+                        Foreground="{StaticResource SpotifyGreenBrush}" />
                     <TextBlock 
                         x:Name="IdentifyStatusText"
                         Text="Escuchando..."
@@ -438,12 +458,18 @@
                         Minimum="0"
                         Maximum="100"
                         Width="200"
-                        Foreground="{StaticResource AppleRedBrush}"
+                        Foreground="{StaticResource SpotifyGreenBrush}"
+                        Background="{StaticResource BackgroundTertiaryBrush}"
                         CornerRadius="3" />
                     <Button 
                         Click="CancelIdentify_Click"
                         Content="Cancelar"
-                        Style="{StaticResource AppleSecondaryButtonStyle}"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        BorderBrush="{StaticResource TextSubduedBrush}"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="20,8"
                         HorizontalAlignment="Center" />
                 </StackPanel>
             </Border>

@@ -13,47 +13,43 @@
         <converters:FavoriteToIconConverter x:Key="FavoriteToIconConverter" />
     </UserControl.Resources>
 
-    <!-- Premium Player Bar with Acrylic Background -->
+    <!-- Spotify Player Bar with Dark Background -->
     <Border 
-        Height="76"
-        BorderBrush="#0A000000"
-        BorderThickness="0,0.5,0,0">
+        Height="90"
+        BorderBrush="#282828"
+        BorderThickness="0,1,0,0"
+        Background="{StaticResource BackgroundPrimaryBrush}">
         
-        <Border.Background>
-            <AcrylicBrush 
-                TintColor="#FFFFFF"
-                TintOpacity="0.72"
-                TintLuminosityOpacity="0.92"
-                FallbackColor="#F8F8F8" />
-        </Border.Background>
-        
-        <Grid Padding="20,0">
+        <Grid Padding="16,0">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MinWidth="200" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" MinWidth="250" />
             </Grid.ColumnDefinitions>
 
-            <!-- Now Playing Info (Left) -->
+            <!-- ============================================ -->
+            <!-- LEFT: Now Playing Info -->
+            <!-- ============================================ -->
             <StackPanel 
                 Grid.Column="0"
                 Orientation="Horizontal"
-                Spacing="14"
-                VerticalAlignment="Center">
+                Spacing="12"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Left">
                 
-                <!-- Station Artwork with Glow when playing -->
+                <!-- Station Artwork -->
                 <Grid
                     Visibility="{x:Bind ViewModel.CurrentStation, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
                     
                     <!-- Glow effect (visible when playing) -->
                     <Border 
                         x:Name="ArtworkGlow"
-                        Width="52"
-                        Height="52"
-                        CornerRadius="10"
+                        Width="56"
+                        Height="56"
+                        CornerRadius="4"
                         Opacity="0">
                         <Border.Background>
-                            <SolidColorBrush Color="{StaticResource AppleRed}" />
+                            <SolidColorBrush Color="{StaticResource SpotifyGreen}" />
                         </Border.Background>
                         <Border.Shadow>
                             <ThemeShadow />
@@ -62,12 +58,12 @@
                     
                     <!-- Artwork -->
                     <Border 
-                        Width="52"
-                        Height="52"
-                        CornerRadius="10"
+                        Width="56"
+                        Height="56"
+                        CornerRadius="4"
                         Background="{StaticResource BackgroundTertiaryBrush}">
                         <Grid>
-                            <Border CornerRadius="10">
+                            <Border CornerRadius="4">
                                 <Image 
                                     x:Name="StationLogo"
                                     Stretch="UniformToFill" />
@@ -82,71 +78,48 @@
                     </Border>
                 </Grid>
 
-                <!-- Station Info with Equalizer -->
+                <!-- Station Info -->
                 <StackPanel 
                     VerticalAlignment="Center"
-                    Spacing="2"
+                    Spacing="4"
                     Visibility="{x:Bind ViewModel.CurrentStation, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
                     
-                    <!-- Name row with equalizer -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <!-- Equalizer bars (visible when playing) -->
-                        <Grid 
-                            x:Name="EqualizerBars"
-                            Width="14"
-                            Height="14"
-                            VerticalAlignment="Center"
-                            Visibility="Collapsed">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="4" />
-                                <ColumnDefinition Width="1" />
-                                <ColumnDefinition Width="4" />
-                                <ColumnDefinition Width="1" />
-                                <ColumnDefinition Width="4" />
-                            </Grid.ColumnDefinitions>
-                            
-                            <!-- Bar 1 -->
-                            <Border 
-                                x:Name="EqBar1"
-                                Grid.Column="0"
-                                Background="{StaticResource AppleRedBrush}"
-                                CornerRadius="1"
-                                Height="6"
-                                VerticalAlignment="Bottom" />
-                            <!-- Bar 2 -->
-                            <Border 
-                                x:Name="EqBar2"
-                                Grid.Column="2"
-                                Background="{StaticResource AppleRedBrush}"
-                                CornerRadius="1"
-                                Height="10"
-                                VerticalAlignment="Bottom" />
-                            <!-- Bar 3 -->
-                            <Border 
-                                x:Name="EqBar3"
-                                Grid.Column="4"
-                                Background="{StaticResource AppleRedBrush}"
-                                CornerRadius="1"
-                                Height="4"
-                                VerticalAlignment="Bottom" />
-                        </Grid>
-                        
-                        <TextBlock 
-                            x:Name="StationName"
-                            Text="{x:Bind ViewModel.CurrentStation.Name, Mode=OneWay}"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource TextPrimaryBrush}"
-                            TextTrimming="CharacterEllipsis"
-                            MaxWidth="220" />
-                    </StackPanel>
+                    <TextBlock 
+                        x:Name="StationName"
+                        Text="{x:Bind ViewModel.CurrentStation.Name, Mode=OneWay}"
+                        FontSize="14"
+                        FontWeight="Normal"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        TextTrimming="CharacterEllipsis"
+                        MaxWidth="180" />
                     
                     <TextBlock 
                         x:Name="StationCountry"
                         Text="{x:Bind ViewModel.CurrentStation.FormattedMetadata, Mode=OneWay}"
-                        FontSize="12"
+                        FontSize="11"
                         Foreground="{StaticResource TextSecondaryBrush}" />
                 </StackPanel>
+
+                <!-- Favorite Button (next to station info, like Spotify) -->
+                <Button 
+                    x:Name="FavoriteButton"
+                    Click="Favorite_Click"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Width="32"
+                    Height="32"
+                    Padding="0"
+                    ToolTipService.ToolTip="Añadir a favoritos"
+                    IsEnabled="{x:Bind ViewModel.CurrentStation, Mode=OneWay, Converter={StaticResource NullToBoolConverter}}"
+                    Visibility="{x:Bind ViewModel.CurrentStation, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                    PointerEntered="ActionButton_PointerEntered"
+                    PointerExited="ActionButton_PointerExited">
+                    <FontIcon 
+                        x:Name="FavoriteIcon"
+                        Glyph="{x:Bind ViewModel.IsCurrentStationFavorite, Mode=OneWay, Converter={StaticResource FavoriteToIconConverter}}"
+                        FontSize="16"
+                        Foreground="{StaticResource SpotifyGreenBrush}" />
+                </Button>
 
                 <!-- No Station Placeholder -->
                 <TextBlock 
@@ -157,31 +130,162 @@
                     Visibility="{x:Bind ViewModel.CurrentStation, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}" />
             </StackPanel>
 
-            <!-- Playback Controls (Center) - Only Play/Pause -->
-            <Grid 
+            <!-- ============================================ -->
+            <!-- CENTER: Playback Controls -->
+            <!-- ============================================ -->
+            <StackPanel 
                 Grid.Column="1"
-                VerticalAlignment="Center">
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Spacing="8">
                 
-                <!-- Play/Pause Button - Larger and centered -->
-                <Button 
-                    x:Name="PlayPauseButton"
-                    Click="PlayPause_Click"
-                    Width="48"
-                    Height="48"
-                    CornerRadius="24"
-                    Background="{StaticResource TextPrimaryBrush}"
-                    BorderThickness="0"
-                    ToolTipService.ToolTip="Reproducir/Pausar"
-                    PointerEntered="PlayButton_PointerEntered"
-                    PointerExited="PlayButton_PointerExited">
-                    <FontIcon 
-                        Glyph="{x:Bind ViewModel.PlaybackState, Mode=OneWay, Converter={StaticResource PlaybackStateToIconConverter}}"
-                        FontSize="18"
-                        Foreground="White" />
-                </Button>
-            </Grid>
+                <!-- Control Buttons Row -->
+                <StackPanel 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Center"
+                    Spacing="16">
+                    
+                    <!-- Shuffle Button (optional for radio) -->
+                    <Button 
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        IsEnabled="False"
+                        Opacity="0.3"
+                        ToolTipService.ToolTip="Aleatorio (no disponible)">
+                        <FontIcon 
+                            Glyph="&#xE8B1;"
+                            FontSize="16"
+                            Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Button>
+                    
+                    <!-- Previous Button -->
+                    <Button 
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        IsEnabled="False"
+                        Opacity="0.3"
+                        ToolTipService.ToolTip="Anterior (no disponible)">
+                        <FontIcon 
+                            Glyph="&#xE892;"
+                            FontSize="22"
+                            Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Button>
+                    
+                    <!-- Play/Pause Button - Central and prominent -->
+                    <Button 
+                        x:Name="PlayPauseButton"
+                        Click="PlayPause_Click"
+                        Width="36"
+                        Height="36"
+                        CornerRadius="18"
+                        Background="{StaticResource TextPrimaryBrush}"
+                        BorderThickness="0"
+                        Padding="0"
+                        ToolTipService.ToolTip="Reproducir/Pausar"
+                        PointerEntered="PlayButton_PointerEntered"
+                        PointerExited="PlayButton_PointerExited">
+                        <FontIcon 
+                            Glyph="{x:Bind ViewModel.PlaybackState, Mode=OneWay, Converter={StaticResource PlaybackStateToIconConverter}}"
+                            FontSize="16"
+                            Foreground="Black" />
+                    </Button>
+                    
+                    <!-- Next Button -->
+                    <Button 
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        IsEnabled="False"
+                        Opacity="0.3"
+                        ToolTipService.ToolTip="Siguiente (no disponible)">
+                        <FontIcon 
+                            Glyph="&#xE893;"
+                            FontSize="22"
+                            Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Button>
+                    
+                    <!-- Repeat Button (optional for radio) -->
+                    <Button 
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        IsEnabled="False"
+                        Opacity="0.3"
+                        ToolTipService.ToolTip="Repetir (no disponible)">
+                        <FontIcon 
+                            Glyph="&#xE8EE;"
+                            FontSize="16"
+                            Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Button>
+                </StackPanel>
+                
+                <!-- Progress/Live Indicator Bar -->
+                <Grid MaxWidth="400" HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Live Indicator or Time -->
+                    <StackPanel 
+                        Grid.Column="0" 
+                        Orientation="Horizontal" 
+                        Spacing="4"
+                        VerticalAlignment="Center"
+                        Margin="0,0,8,0">
+                        <Ellipse 
+                            x:Name="LiveDot"
+                            Width="8" 
+                            Height="8" 
+                            Fill="{StaticResource SpotifyGreenBrush}"
+                            Visibility="{x:Bind ViewModel.IsPlaying, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock 
+                            Text="EN VIVO"
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Visibility="{x:Bind ViewModel.IsPlaying, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    </StackPanel>
+                    
+                    <!-- Progress Bar (decorative for live radio) -->
+                    <Grid Grid.Column="1" Height="4" VerticalAlignment="Center">
+                        <Border 
+                            Background="{StaticResource BackgroundHighlightBrush}"
+                            CornerRadius="2" />
+                        <Border 
+                            x:Name="ProgressFill"
+                            Background="{StaticResource SpotifyGreenBrush}"
+                            CornerRadius="2"
+                            HorizontalAlignment="Left"
+                            Width="0" />
+                    </Grid>
+                    
+                    <!-- Stream Quality -->
+                    <TextBlock 
+                        Grid.Column="2"
+                        Text="RADIO"
+                        FontSize="10"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0" />
+                </Grid>
+            </StackPanel>
 
-            <!-- Right Controls -->
+            <!-- ============================================ -->
+            <!-- RIGHT: Volume & Extra Controls -->
+            <!-- ============================================ -->
             <StackPanel 
                 Grid.Column="2"
                 Orientation="Horizontal"
@@ -189,47 +293,36 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center">
 
-                <!-- Identify Button (Shazam-style) with hover animation -->
+                <!-- Identify Button (Shazam-style) - PROMINENT -->
                 <Button 
                     x:Name="IdentifyButton"
                     Click="Identify_Click"
-                    Background="{StaticResource AppleRedBrush}"
-                    Foreground="White"
+                    Background="{StaticResource SpotifyGreenBrush}"
+                    Foreground="Black"
                     CornerRadius="18"
-                    Padding="14,8"
+                    Height="36"
+                    Padding="16,0"
                     BorderThickness="0"
-                    ToolTipService.ToolTip="Identificar canción"
+                    ToolTipService.ToolTip="Identificar canción (Ctrl+I)"
                     PointerEntered="ActionButton_PointerEntered"
                     PointerExited="ActionButton_PointerExited">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE8D6;" FontSize="14" />
-                        <TextBlock Text="Identificar" FontSize="12" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8D6;" FontSize="16" />
+                        <TextBlock Text="Identificar" FontSize="13" FontWeight="Bold" />
                     </StackPanel>
                 </Button>
 
-                <!-- Favorite Button with animation -->
-                <Button 
-                    x:Name="FavoriteButton"
-                    Click="Favorite_Click"
-                    Style="{StaticResource AppleIconButtonStyle}"
-                    ToolTipService.ToolTip="Favorito"
-                    IsEnabled="{x:Bind ViewModel.CurrentStation, Mode=OneWay, Converter={StaticResource NullToBoolConverter}}"
-                    PointerEntered="ActionButton_PointerEntered"
-                    PointerExited="ActionButton_PointerExited">
-                    <FontIcon 
-                        x:Name="FavoriteIcon"
-                        Glyph="{x:Bind ViewModel.IsCurrentStationFavorite, Mode=OneWay, Converter={StaticResource FavoriteToIconConverter}}"
-                        FontSize="16"
-                        Foreground="{StaticResource AppleRedBrush}" />
-                </Button>
-
                 <!-- Volume Control Group -->
-                <StackPanel Orientation="Horizontal" Spacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="0">
                     <!-- Volume Icon (clickable to mute) -->
                     <Button 
                         x:Name="VolumeButton"
                         Click="Mute_Click"
-                        Style="{StaticResource AppleIconButtonStyle}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
                         ToolTipService.ToolTip="Silenciar"
                         PointerEntered="ActionButton_PointerEntered"
                         PointerExited="ActionButton_PointerExited">
@@ -240,7 +333,7 @@
                             Foreground="{StaticResource TextSecondaryBrush}" />
                     </Button>
 
-                    <!-- Volume Slider with custom styling -->
+                    <!-- Volume Slider -->
                     <Slider 
                         x:Name="VolumeSlider"
                         Width="100"

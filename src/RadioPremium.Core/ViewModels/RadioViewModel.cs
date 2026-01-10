@@ -36,7 +36,27 @@ public partial class RadioViewModel : ObservableRecipient
 {
     private readonly IRadioBrowserService _radioBrowserService;
     private readonly IFavoritesRepository _favoritesRepository;
+    private readonly ISettingsService _settingsService;
     private CancellationTokenSource? _searchCts;
+
+    // Tags to include for music-only filter
+    private static readonly HashSet<string> MusicTags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "music", "pop", "rock", "jazz", "classical", "electronic", "dance", "hip-hop", "hip hop",
+        "rnb", "r&b", "soul", "blues", "country", "metal", "indie", "folk", "reggae", "latin",
+        "latino", "salsa", "bachata", "cumbia", "tropical", "house", "techno", "trance", "edm",
+        "ambient", "chill", "lounge", "acoustic", "alternative", "punk", "grunge", "disco",
+        "funk", "gospel", "christian", "opera", "symphony", "80s", "90s", "70s", "60s", "oldies",
+        "hits", "top 40", "charts", "contemporary", "adult contemporary", "easy listening"
+    };
+
+    // Tags to exclude (non-music content)
+    private static readonly HashSet<string> NonMusicTags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "news", "talk", "sports", "politics", "religion", "comedy", "podcast", "audiobook",
+        "education", "weather", "traffic", "business", "finance", "government", "public radio",
+        "talk radio", "spoken word", "documentary", "drama", "children", "kids"
+    };
 
     [ObservableProperty]
     private string _searchQuery = string.Empty;
@@ -96,10 +116,12 @@ public partial class RadioViewModel : ObservableRecipient
 
     public RadioViewModel(
         IRadioBrowserService radioBrowserService,
-        IFavoritesRepository favoritesRepository)
+        IFavoritesRepository favoritesRepository,
+        ISettingsService settingsService)
     {
         _radioBrowserService = radioBrowserService;
         _favoritesRepository = favoritesRepository;
+        _settingsService = settingsService;
         IsActive = true;
     }
 
@@ -329,27 +351,40 @@ public partial class RadioViewModel : ObservableRecipient
             var favoriteIds = await _favoritesRepository.GetFavoriteIdsAsync(token);
             System.Diagnostics.Debug.WriteLine($"[RadioVM] Got {favoriteIds.Count} favorite IDs");
 
+            // Request more stations to have room for filtering
+            var requestLimit = _settingsService.Settings.MusicOnlyFilter ? 300 : 100;
+
             var stations = await _radioBrowserService.SearchAsync(
                 name: name,
                 country: country,
                 tag: tag,
                 orderBy: orderBy,
                 reverse: orderBy != "name", // Only reverse for non-alphabetical
-                limit: 100,
+                limit: requestLimit,
                 cancellationToken: token);
             
             System.Diagnostics.Debug.WriteLine($"[RadioVM] Got {stations.Count} stations from API");
 
             token.ThrowIfCancellationRequested();
 
+            // Apply music-only filter if enabled
+            var filteredStations = stations.AsEnumerable();
+            if (_settingsService.Settings.MusicOnlyFilter)
+            {
+                filteredStations = FilterMusicOnlyStations(stations);
+                System.Diagnostics.Debug.WriteLine($"[RadioVM] After music filter: {filteredStations.Count()} stations");
+            }
+
             Stations.Clear();
-            foreach (var station in stations)
+            var count = 0;
+            foreach (var station in filteredStations.Take(100))
             {
                 station.IsFavorite = favoriteIds.Contains(station.StationUuid);
                 Stations.Add(station);
+                count++;
             }
 
-            TotalResults = Stations.Count;
+            TotalResults = count;
         }
         catch (OperationCanceledException)
         {
@@ -362,6 +397,30 @@ public partial class RadioViewModel : ObservableRecipient
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Filter stations to only include music stations
+    /// </summary>
+    private IEnumerable<Station> FilterMusicOnlyStations(IReadOnlyList<Station> stations)
+    {
+        foreach (var station in stations)
+        {
+            var tags = station.Tags?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) 
+                       ?? Array.Empty<string>();
+
+            // Exclude if has any non-music tag
+            var hasNonMusicTag = tags.Any(t => NonMusicTags.Contains(t));
+            if (hasNonMusicTag)
+                continue;
+
+            // Include if has any music tag OR if no tags at all (give benefit of doubt)
+            var hasMusicTag = tags.Any(t => MusicTags.Contains(t));
+            if (hasMusicTag || tags.Length == 0)
+            {
+                yield return station;
+            }
         }
     }
 
