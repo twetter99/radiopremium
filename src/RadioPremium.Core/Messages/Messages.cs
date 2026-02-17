@@ -12,6 +12,21 @@ public sealed class PlayStationMessage : ValueChangedMessage<Station>
 }
 
 /// <summary>
+/// Message to set playback queue with a list of stations
+/// </summary>
+public sealed class SetQueueMessage
+{
+    public IEnumerable<Station> Stations { get; }
+    public Station? StartStation { get; }
+
+    public SetQueueMessage(IEnumerable<Station> stations, Station? startStation = null)
+    {
+        Stations = stations;
+        StartStation = startStation;
+    }
+}
+
+/// <summary>
 /// Message when playback state changes
 /// </summary>
 public sealed class PlaybackStateChangedMessage : ValueChangedMessage<PlaybackState>

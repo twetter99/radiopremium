@@ -11,8 +11,9 @@
         <converters:NullToBoolConverter x:Key="NullToBoolConverter" />
         <converters:PlaybackStateToIconConverter x:Key="PlaybackStateToIconConverter" />
         <converters:FavoriteToIconConverter x:Key="FavoriteToIconConverter" />
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+        <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
     </UserControl.Resources>
-
     <!-- Spotify Player Bar with Dark Background -->
     <Border 
         Height="90"
@@ -145,33 +146,33 @@
                     HorizontalAlignment="Center"
                     Spacing="16">
                     
-                    <!-- Shuffle Button (optional for radio) -->
-                    <Button 
+                    <!-- Shuffle Button -->
+                    <Button
+                        Click="Shuffle_Click"
                         Background="Transparent"
                         BorderThickness="0"
                         Width="32"
                         Height="32"
                         Padding="0"
-                        IsEnabled="False"
-                        Opacity="0.3"
-                        ToolTipService.ToolTip="Aleatorio (no disponible)">
-                        <FontIcon 
+                        ToolTipService.ToolTip="Aleatorio">
+                        <FontIcon
                             Glyph="&#xE8B1;"
                             FontSize="16"
-                            Foreground="{StaticResource TextSecondaryBrush}" />
+                            Foreground="{x:Bind ViewModel.IsShuffleEnabled, Mode=OneWay, Converter={StaticResource BoolToColorConverter}, ConverterParameter='SpotifyGreen'}" />
                     </Button>
-                    
+
                     <!-- Previous Button -->
-                    <Button 
+                    <Button
+                        Click="Previous_Click"
                         Background="Transparent"
                         BorderThickness="0"
                         Width="32"
                         Height="32"
                         Padding="0"
-                        IsEnabled="False"
-                        Opacity="0.3"
-                        ToolTipService.ToolTip="Anterior (no disponible)">
-                        <FontIcon 
+                        IsEnabled="{x:Bind ViewModel.CanPlayPrevious, Mode=OneWay}"
+                        Opacity="{x:Bind ViewModel.CanPlayPrevious, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                        ToolTipService.ToolTip="Anterior">
+                        <FontIcon
                             Glyph="&#xE892;"
                             FontSize="22"
                             Foreground="{StaticResource TextSecondaryBrush}" />
@@ -197,35 +198,35 @@
                     </Button>
                     
                     <!-- Next Button -->
-                    <Button 
+                    <Button
+                        Click="Next_Click"
                         Background="Transparent"
                         BorderThickness="0"
                         Width="32"
                         Height="32"
                         Padding="0"
-                        IsEnabled="False"
-                        Opacity="0.3"
-                        ToolTipService.ToolTip="Siguiente (no disponible)">
-                        <FontIcon 
+                        IsEnabled="{x:Bind ViewModel.CanPlayNext, Mode=OneWay}"
+                        Opacity="{x:Bind ViewModel.CanPlayNext, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                        ToolTipService.ToolTip="Siguiente">
+                        <FontIcon
                             Glyph="&#xE893;"
                             FontSize="22"
                             Foreground="{StaticResource TextSecondaryBrush}" />
                     </Button>
-                    
-                    <!-- Repeat Button (optional for radio) -->
-                    <Button 
+
+                    <!-- Repeat Button -->
+                    <Button
+                        Click="Repeat_Click"
                         Background="Transparent"
                         BorderThickness="0"
                         Width="32"
                         Height="32"
                         Padding="0"
-                        IsEnabled="False"
-                        Opacity="0.3"
-                        ToolTipService.ToolTip="Repetir (no disponible)">
-                        <FontIcon 
+                        ToolTipService.ToolTip="Repetir">
+                        <FontIcon
                             Glyph="&#xE8EE;"
                             FontSize="16"
-                            Foreground="{StaticResource TextSecondaryBrush}" />
+                            Foreground="{x:Bind ViewModel.IsRepeatEnabled, Mode=OneWay, Converter={StaticResource BoolToColorConverter}, ConverterParameter='SpotifyGreen'}" />
                     </Button>
                 </StackPanel>
                 
@@ -312,10 +313,27 @@
                     </StackPanel>
                 </Button>
 
+                <!-- Mini Player Toggle -->
+                <Button
+                    Click="MiniPlayer_Click"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Width="32"
+                    Height="32"
+                    Padding="0"
+                    ToolTipService.ToolTip="Modo mini-player"
+                    PointerEntered="ActionButton_PointerEntered"
+                    PointerExited="ActionButton_PointerExited">
+                    <FontIcon
+                        Glyph="&#xE73F;"
+                        FontSize="16"
+                        Foreground="{StaticResource TextSecondaryBrush}" />
+                </Button>
+
                 <!-- Volume Control Group -->
                 <StackPanel Orientation="Horizontal" Spacing="0">
                     <!-- Volume Icon (clickable to mute) -->
-                    <Button 
+                    <Button
                         x:Name="VolumeButton"
                         Click="Mute_Click"
                         Background="Transparent"
@@ -326,7 +344,7 @@
                         ToolTipService.ToolTip="Silenciar"
                         PointerEntered="ActionButton_PointerEntered"
                         PointerExited="ActionButton_PointerExited">
-                        <FontIcon 
+                        <FontIcon
                             x:Name="VolumeIcon"
                             Glyph="&#xE767;"
                             FontSize="16"
@@ -334,7 +352,7 @@
                     </Button>
 
                     <!-- Volume Slider -->
-                    <Slider 
+                    <Slider
                         x:Name="VolumeSlider"
                         Width="100"
                         Minimum="0"

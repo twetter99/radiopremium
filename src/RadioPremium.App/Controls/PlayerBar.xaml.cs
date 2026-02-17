@@ -186,4 +186,29 @@ public sealed partial class PlayerBar : UserControl
     {
         UpdateVolumeIcon();
     }
+
+    private void Previous_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.PlayPreviousCommand.Execute(null);
+    }
+
+    private void Next_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.PlayNextCommand.Execute(null);
+    }
+
+    private void Shuffle_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ToggleShuffleCommand.Execute(null);
+    }
+
+    private void Repeat_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ToggleRepeatCommand.Execute(null);
+    }
+
+    private void MiniPlayer_Click(object sender, RoutedEventArgs e)
+    {
+        App.SwitchToMiniPlayer();
+    }
 }

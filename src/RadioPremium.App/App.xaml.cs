@@ -16,10 +16,51 @@ namespace RadioPremium.App;
 public partial class App : Application
 {
     private Window? _window;
+    private MiniPlayerWindow? _miniPlayerWindow;
 
     public static IServiceProvider Services { get; private set; } = null!;
-    
+
     public static Window? MainWindow => ((App)Current)._window;
+
+    public static void SwitchToMiniPlayer()
+    {
+        var app = (App)Current;
+        if (app._miniPlayerWindow is null)
+        {
+            app._miniPlayerWindow = new MiniPlayerWindow();
+            app._miniPlayerWindow.ExpandRequested += (s, e) => SwitchToMainWindow();
+            app._miniPlayerWindow.Closed += (s, e) =>
+            {
+                app._miniPlayerWindow = null;
+                // If main window is also closed, exit app
+                if (app._window is null)
+                {
+                    app.Exit();
+                }
+            };
+        }
+
+        app._miniPlayerWindow.Activate();
+
+        // Close main window when switching to mini player
+        var mainWindow = app._window;
+        app._window = null;
+        mainWindow?.Close();
+    }
+
+    public static void SwitchToMainWindow()
+    {
+        var app = (App)Current;
+
+        // Create new main window
+        app._window = new MainWindow();
+        app._window.Activate();
+
+        // Close mini player
+        var miniPlayer = app._miniPlayerWindow;
+        app._miniPlayerWindow = null;
+        miniPlayer?.Close();
+    }
 
     public static T GetService<T>() where T : class => Services.GetRequiredService<T>();
 
@@ -68,9 +109,12 @@ public partial class App : Application
         // Register Infrastructure Services
         services.AddSingleton<ISecureStorageService, SecureStorageService>();
         services.AddSingleton<IFavoritesRepository, FavoritesRepository>();
+        services.AddSingleton<IIdentifiedTracksRepository, IdentifiedTracksRepository>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IAudioPlayerService, AudioPlayerService>();
         services.AddSingleton<ILoopbackCaptureService, LoopbackCaptureService>();
+        services.AddSingleton<INotificationService, WindowsNotificationService>();
+        services.AddSingleton<IPlaybackQueueService, PlaybackQueueService>();
 
         services.AddSingleton<IRadioBrowserService>(sp =>
         {
@@ -111,6 +155,7 @@ public partial class App : Application
         services.AddTransient<SpotifyViewModel>();
         services.AddTransient<FavoritesViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<IdentifiedTracksViewModel>();
 
         return services.BuildServiceProvider();
     }

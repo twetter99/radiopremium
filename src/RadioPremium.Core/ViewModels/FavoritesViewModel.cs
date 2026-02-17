@@ -93,7 +93,9 @@ public partial class FavoritesViewModel : ObservableRecipient
         if (station is null) return;
 
         SelectedStation = station;
-        Messenger.Send(new PlayStationMessage(station));
+
+        // Send queue with all favorites and start with the selected station
+        Messenger.Send(new SetQueueMessage(Favorites, station));
     }
 
     [RelayCommand]

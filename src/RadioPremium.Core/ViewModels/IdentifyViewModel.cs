@@ -15,8 +15,12 @@ public partial class IdentifyViewModel : ObservableRecipient
 {
     private readonly ILoopbackCaptureService _loopbackCaptureService;
     private readonly IAcrCloudRecognitionService _acrCloudService;
+    private readonly IIdentifiedTracksRepository _tracksRepository;
+    private readonly INotificationService _notificationService;
+    private readonly ISettingsService _settingsService;
     private readonly string _logPath;
     private CancellationTokenSource? _identifyCts;
+    private Station? _currentStation;
 
     [ObservableProperty]
     private CaptureState _state = CaptureState.Idle;
@@ -38,10 +42,16 @@ public partial class IdentifyViewModel : ObservableRecipient
 
     public IdentifyViewModel(
         ILoopbackCaptureService loopbackCaptureService,
-        IAcrCloudRecognitionService acrCloudService)
+        IAcrCloudRecognitionService acrCloudService,
+        IIdentifiedTracksRepository tracksRepository,
+        INotificationService notificationService,
+        ISettingsService settingsService)
     {
         _loopbackCaptureService = loopbackCaptureService;
         _acrCloudService = acrCloudService;
+        _tracksRepository = tracksRepository;
+        _notificationService = notificationService;
+        _settingsService = settingsService;
         _logPath = Path.Combine(AppContext.BaseDirectory, "identify.log");
 
         File.AppendAllText(_logPath, $"\n[{DateTime.Now:HH:mm:ss}] IdentifyViewModel created\n");
@@ -70,9 +80,23 @@ public partial class IdentifyViewModel : ObservableRecipient
         Messenger.Send(new IdentificationStateChangedMessage(State, progress));
     }
 
-    [RelayCommand(CanExecute = nameof(CanIdentify))]
+    [RelayCommand]
     private async Task IdentifyAsync()
     {
+        // Check if already identifying
+        if (State != CaptureState.Idle)
+        {
+            return;
+        }
+
+        // Check if audio device is available
+        if (!_loopbackCaptureService.IsAvailable)
+        {
+            ErrorMessage = "No hay dispositivo de audio disponible";
+            Messenger.Send(new ShowNotificationMessage("Error", ErrorMessage, NotificationType.Error));
+            return;
+        }
+
         _identifyCts?.Cancel();
         _identifyCts = new CancellationTokenSource();
         var token = _identifyCts.Token;
@@ -106,8 +130,31 @@ public partial class IdentifyViewModel : ObservableRecipient
             {
                 IdentifiedTrack = identifyResult.Track;
                 IsDialogOpen = true;
-                
+
+                // Save to history
+                var history = new IdentifiedTrackHistory
+                {
+                    Track = identifyResult.Track,
+                    IdentifiedAt = DateTime.Now,
+                    StationUuid = _currentStation?.StationUuid,
+                    StationName = _currentStation?.Name,
+                    StationCountry = _currentStation?.Country,
+                    StationFavicon = _currentStation?.Favicon
+                };
+                await _tracksRepository.AddAsync(history, token);
+
                 File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Sending TrackIdentifiedMessage: {identifyResult.Track.Title}\n");
+
+                // Show Windows notification if enabled
+                if (_settingsService.Settings.ShowNotifications)
+                {
+                    _notificationService.ShowTrackIdentifiedNotification(
+                        identifyResult.Track.Title,
+                        identifyResult.Track.Artist,
+                        identifyResult.Track.ArtworkUrl,
+                        _currentStation?.Name);
+                }
+
                 WeakReferenceMessenger.Default.Send(new TrackIdentifiedMessage(identifyResult.Track));
                 WeakReferenceMessenger.Default.Send(new ShowNotificationMessage(
                     "Canción identificada",
@@ -165,6 +212,12 @@ public partial class IdentifyViewModel : ObservableRecipient
         base.OnActivated();
         File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] OnActivated called\n");
 
+        // Listen for current station changes
+        Messenger.Register<PlaybackStateChangedMessage>(this, (r, m) =>
+        {
+            _currentStation = m.Station;
+        });
+
         Messenger.Register<RequestIdentifyMessage>(this, async (r, m) =>
         {
             File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] RequestIdentifyMessage received. CanIdentify: {CanIdentify}\n");
@@ -178,7 +231,7 @@ public partial class IdentifyViewModel : ObservableRecipient
                 File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Cannot identify - State: {State}, IsAvailable: {_loopbackCaptureService.IsAvailable}\n");
             }
         });
-        
+
         File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Message registered\n");
     }
 }

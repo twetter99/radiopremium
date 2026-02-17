@@ -14,6 +14,9 @@ public partial class PlayerViewModel : ObservableRecipient
 {
     private readonly IAudioPlayerService _audioPlayerService;
     private readonly IFavoritesRepository _favoritesRepository;
+    private readonly INotificationService _notificationService;
+    private readonly ISettingsService _settingsService;
+    private readonly IPlaybackQueueService _queueService;
 
     [ObservableProperty]
     private Station? _currentStation;
@@ -33,22 +36,43 @@ public partial class PlayerViewModel : ObservableRecipient
     [ObservableProperty]
     private string? _errorMessage;
 
+    [ObservableProperty]
+    private bool _isShuffleEnabled;
+
+    [ObservableProperty]
+    private bool _isRepeatEnabled;
+
     public bool IsPlaying => PlaybackState == PlaybackState.Playing;
     public bool IsStopped => PlaybackState == PlaybackState.Stopped;
     public bool IsLoading => PlaybackState == PlaybackState.Loading;
     public bool CanPlay => CurrentStation is not null && PlaybackState != PlaybackState.Loading;
+    public bool CanPlayNext => _queueService.HasNext;
+    public bool CanPlayPrevious => _queueService.HasPrevious;
 
     public PlayerViewModel(
         IAudioPlayerService audioPlayerService,
-        IFavoritesRepository favoritesRepository)
+        IFavoritesRepository favoritesRepository,
+        INotificationService notificationService,
+        ISettingsService settingsService,
+        IPlaybackQueueService queueService)
     {
         _audioPlayerService = audioPlayerService;
         _favoritesRepository = favoritesRepository;
+        _notificationService = notificationService;
+        _settingsService = settingsService;
+        _queueService = queueService;
 
         _audioPlayerService.StateChanged += OnPlaybackStateChanged;
         _audioPlayerService.ErrorOccurred += OnPlaybackError;
+        _queueService.QueueChanged += OnQueueChanged;
 
         IsActive = true;
+    }
+
+    private void OnQueueChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(CanPlayNext));
+        OnPropertyChanged(nameof(CanPlayPrevious));
     }
 
     private void OnPlaybackStateChanged(object? sender, PlaybackState state)
@@ -60,11 +84,31 @@ public partial class PlayerViewModel : ObservableRecipient
         OnPropertyChanged(nameof(CanPlay));
 
         Messenger.Send(new PlaybackStateChangedMessage(state, CurrentStation));
+
+        // Show notification when playback starts (if enabled)
+        if (state == PlaybackState.Playing && CurrentStation is not null && _settingsService.Settings.ShowNotifications)
+        {
+            _notificationService.ShowNotificationWithImage(
+                "Reproduciendo",
+                CurrentStation.Name,
+                CurrentStation.Favicon ?? string.Empty,
+                NotificationPriority.Normal);
+        }
     }
 
     private void OnPlaybackError(object? sender, string error)
     {
         ErrorMessage = error;
+
+        // Show Windows notification for errors (if enabled)
+        if (_settingsService.Settings.ShowNotifications)
+        {
+            _notificationService.ShowNotification(
+                "Error de reproducción",
+                error,
+                NotificationPriority.High);
+        }
+
         Messenger.Send(new ShowNotificationMessage("Error de reproducción", error, NotificationType.Error));
     }
 
@@ -113,6 +157,40 @@ public partial class PlayerViewModel : ObservableRecipient
         Messenger.Send(RequestIdentifyMessage.Instance);
     }
 
+    [RelayCommand(CanExecute = nameof(CanPlayNext))]
+    private async Task PlayNextAsync()
+    {
+        var nextStation = _queueService.MoveNext();
+        if (nextStation != null)
+        {
+            await PlayAsync(nextStation);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPlayPrevious))]
+    private async Task PlayPreviousAsync()
+    {
+        var previousStation = _queueService.MovePrevious();
+        if (previousStation != null)
+        {
+            await PlayAsync(previousStation);
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleShuffle()
+    {
+        IsShuffleEnabled = !IsShuffleEnabled;
+        _queueService.IsShuffleEnabled = IsShuffleEnabled;
+    }
+
+    [RelayCommand]
+    private void ToggleRepeat()
+    {
+        IsRepeatEnabled = !IsRepeatEnabled;
+        _queueService.IsRepeatEnabled = IsRepeatEnabled;
+    }
+
     partial void OnVolumeChanged(float value)
     {
         _audioPlayerService.Volume = value;
@@ -131,6 +209,15 @@ public partial class PlayerViewModel : ObservableRecipient
         Messenger.Register<PlayStationMessage>(this, async (r, m) =>
         {
             await PlayAsync(m.Value);
+        });
+
+        Messenger.Register<SetQueueMessage>(this, async (r, m) =>
+        {
+            _queueService.SetQueue(m.Stations, m.StartStation);
+            if (m.StartStation != null)
+            {
+                await PlayAsync(m.StartStation);
+            }
         });
 
         Messenger.Register<FavoriteChangedMessage>(this, (r, m) =>

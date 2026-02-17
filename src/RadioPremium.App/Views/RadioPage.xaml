@@ -68,7 +68,7 @@
                             Padding="6,2"
                             Margin="8,0,0,0">
                             <TextBlock 
-                                Text="⌘K"
+                                Text="Ctrl+K"
                                 FontSize="11"
                                 Foreground="{StaticResource TextSecondaryBrush}" />
                         </Border>
@@ -1120,7 +1120,7 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- Footer with Keyboard Shortcuts -->
+                    <!-- Footer with Ctrl+Keyboard Shortcuts -->
                     <Border 
                         Grid.Row="2"
                         BorderBrush="{StaticResource TextSubduedBrush}"

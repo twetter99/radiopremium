@@ -14,6 +14,7 @@ public sealed class AppSettings
     public string DefaultCountry { get; set; } = "ES";
     public int SearchResultLimit { get; set; } = 50;
     public bool MusicOnlyFilter { get; set; } = true; // Only show music stations
+    public bool StartInMiniPlayer { get; set; } = false; // Start app in mini-player mode
 }
 
 /// <summary>

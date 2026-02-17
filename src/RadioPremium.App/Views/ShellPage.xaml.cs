@@ -137,6 +137,12 @@ public sealed partial class ShellPage : Page
         ContentFrame.Navigate(typeof(RadioPage), new RadioNavigationParameter(RadioTab.ForYou, "trending"));
     }
 
+    private void IdentifiedNav_Click(object sender, RoutedEventArgs e)
+    {
+        SelectNavButton(IdentifiedNavButton);
+        ContentFrame.Navigate(typeof(IdentifiedTracksPage));
+    }
+
     private void OnTrackIdentified(object recipient, TrackIdentifiedMessage message)
     {
         DispatcherQueue.TryEnqueue(() =>
