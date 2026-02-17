@@ -143,8 +143,8 @@ public sealed partial class RadioPage : Page
     {
         if (sender is Button button && button.Tag is string genre)
         {
-            UpdateGenreChipSelection(button);
             await ViewModel.FilterByGenreCommand.ExecuteAsync(genre);
+            UpdateGenreChipSelection();
         }
     }
 
@@ -152,61 +152,43 @@ public sealed partial class RadioPage : Page
     {
         if (sender is Button button && button.Tag is string country)
         {
-            UpdateCountryChipSelection(button);
             await ViewModel.FilterByCountryCommand.ExecuteAsync(country);
+            UpdateCountryChipSelection();
         }
     }
 
-    private void UpdateGenreChipSelection(Button activeChip)
+    private void UpdateGenreChipSelection()
     {
-        // Reset all genre chips
+        // Apply selected state for all genre chips (multi-select)
         foreach (var child in GenreChipsPanel.Children)
         {
-            if (child is Button chip)
+            if (child is Button chip && chip.Tag is string genre)
             {
-                chip.Style = (Style)App.Current.Resources["FilterChipStyle"];
+                chip.Style = ViewModel.IsGenreFilterSelected(genre)
+                    ? (Style)App.Current.Resources["FilterChipActiveStyle"]
+                    : (Style)App.Current.Resources["FilterChipStyle"];
             }
         }
-        // Set active chip
-        activeChip.Style = (Style)App.Current.Resources["FilterChipActiveStyle"];
     }
 
-    private void UpdateCountryChipSelection(Button activeChip)
+    private void UpdateCountryChipSelection()
     {
-        // Reset all country chips
+        // Apply selected state for all country chips (multi-select)
         foreach (var child in CountryChipsPanel.Children)
         {
-            if (child is Button chip)
+            if (child is Button chip && chip.Tag is string country)
             {
-                chip.Style = (Style)App.Current.Resources["FilterChipStyle"];
+                chip.Style = ViewModel.IsCountryFilterSelected(country)
+                    ? (Style)App.Current.Resources["FilterChipActiveStyle"]
+                    : (Style)App.Current.Resources["FilterChipStyle"];
             }
         }
-        // Set active chip
-        activeChip.Style = (Style)App.Current.Resources["FilterChipActiveStyle"];
     }
 
     private void ResetChipSelection()
     {
-        // Reset genre chips, activate "Todos"
-        foreach (var child in GenreChipsPanel.Children)
-        {
-            if (child is Button chip)
-            {
-                chip.Style = chip.Tag?.ToString() == "Todos" 
-                    ? (Style)App.Current.Resources["FilterChipActiveStyle"]
-                    : (Style)App.Current.Resources["FilterChipStyle"];
-            }
-        }
-        // Reset country chips, activate "Todos"
-        foreach (var child in CountryChipsPanel.Children)
-        {
-            if (child is Button chip)
-            {
-                chip.Style = chip.Tag?.ToString() == "Todos" 
-                    ? (Style)App.Current.Resources["FilterChipActiveStyle"]
-                    : (Style)App.Current.Resources["FilterChipStyle"];
-            }
-        }
+        UpdateGenreChipSelection();
+        UpdateCountryChipSelection();
     }
 
     // ========== LEVEL 3: SORT DROPDOWN ==========
@@ -228,8 +210,8 @@ public sealed partial class RadioPage : Page
 
     private async void ClearFilters_Click(object sender, RoutedEventArgs e)
     {
-        ResetChipSelection();
         await ViewModel.ClearAllFiltersCommand.ExecuteAsync(null);
+        ResetChipSelection();
     }
 
     // ========== STATION INTERACTION ==========

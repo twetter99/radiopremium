@@ -38,6 +38,8 @@ public partial class RadioViewModel : ObservableRecipient
     private readonly IFavoritesRepository _favoritesRepository;
     private readonly ISettingsService _settingsService;
     private CancellationTokenSource? _searchCts;
+    private readonly HashSet<string> _selectedCountryFilters = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _selectedGenreFilters = new(StringComparer.OrdinalIgnoreCase);
 
     // Tags to include for music-only filter
     private static readonly HashSet<string> MusicTags = new(StringComparer.OrdinalIgnoreCase)
@@ -97,6 +99,9 @@ public partial class RadioViewModel : ObservableRecipient
 
     [ObservableProperty]
     private bool _hasActiveFilters;
+
+    public IReadOnlyCollection<string> SelectedCountryFilters => _selectedCountryFilters;
+    public IReadOnlyCollection<string> SelectedGenreFilters => _selectedGenreFilters;
 
     public ObservableCollection<Station> Stations { get; } = new();
     public ObservableCollection<CountryInfo> Countries { get; } = new();
@@ -162,9 +167,7 @@ public partial class RadioViewModel : ObservableRecipient
     private async Task ChangeTabAsync(RadioTab tab)
     {
         CurrentTab = tab;
-        ActiveGenreFilter = string.Empty;
-        ActiveCountryFilter = string.Empty;
-        HasActiveFilters = false;
+        ResetMultiFilters();
 
         switch (tab)
         {
@@ -195,17 +198,22 @@ public partial class RadioViewModel : ObservableRecipient
     {
         if (genre == "Todos")
         {
-            ActiveGenreFilter = string.Empty;
-            HasActiveFilters = !string.IsNullOrEmpty(ActiveCountryFilter);
-            SectionTitle = CurrentTab == RadioTab.Explore ? "Explorar emisoras" : "Todas las emisoras";
+            _selectedGenreFilters.Clear();
         }
         else
         {
-            ActiveGenreFilter = genre;
-            HasActiveFilters = true;
-            SectionTitle = $"Emisoras de {genre}";
+            if (_selectedGenreFilters.Contains(genre))
+            {
+                _selectedGenreFilters.Remove(genre);
+            }
+            else
+            {
+                _selectedGenreFilters.Add(genre);
+            }
         }
 
+        SyncLegacyActiveFilters();
+        UpdateSectionTitleForFilters();
         await ApplyFiltersAsync();
     }
 
@@ -217,17 +225,22 @@ public partial class RadioViewModel : ObservableRecipient
     {
         if (country == "Todos")
         {
-            ActiveCountryFilter = string.Empty;
-            HasActiveFilters = !string.IsNullOrEmpty(ActiveGenreFilter);
-            SectionTitle = CurrentTab == RadioTab.ByCountry ? "Por país" : "Todas las emisoras";
+            _selectedCountryFilters.Clear();
         }
         else
         {
-            ActiveCountryFilter = country;
-            HasActiveFilters = true;
-            SectionTitle = $"Emisoras de {country}";
+            if (_selectedCountryFilters.Contains(country))
+            {
+                _selectedCountryFilters.Remove(country);
+            }
+            else
+            {
+                _selectedCountryFilters.Add(country);
+            }
         }
 
+        SyncLegacyActiveFilters();
+        UpdateSectionTitleForFilters();
         await ApplyFiltersAsync();
     }
 
@@ -247,9 +260,7 @@ public partial class RadioViewModel : ObservableRecipient
     [RelayCommand]
     private async Task ClearAllFiltersAsync()
     {
-        ActiveGenreFilter = string.Empty;
-        ActiveCountryFilter = string.Empty;
-        HasActiveFilters = false;
+        ResetMultiFilters();
         SectionTitle = GetDefaultTitleForTab();
         await ApplyFiltersAsync();
     }
@@ -273,33 +284,100 @@ public partial class RadioViewModel : ObservableRecipient
             _ => "clickcount"
         };
 
-        // Map display names to API names
-        var countryForApi = ActiveCountryFilter switch
-        {
-            "España" => "Spain",
-            "USA" => "United States of America",
-            "UK" => "United Kingdom",
-            "México" => "Mexico",
-            "Francia" => "France",
-            "Alemania" => "Germany",
-            "Argentina" => "Argentina",
-            "Colombia" => "Colombia",
-            _ => ActiveCountryFilter
-        };
+        await SearchStationsByMultiFiltersAsync(orderBy);
+    }
 
-        var tagForApi = ActiveGenreFilter.ToLowerInvariant() switch
+    private async Task SearchStationsByMultiFiltersAsync(string orderBy)
+    {
+        if (_selectedCountryFilters.Count == 0 && _selectedGenreFilters.Count == 0)
         {
-            "electrónica" => "electronic",
-            "clásica" => "classical",
-            "hip hop" => "hip-hop",
-            _ => ActiveGenreFilter.ToLowerInvariant()
-        };
+            await SearchStationsInternalAsync(null, null, null, orderBy);
+            return;
+        }
 
-        await SearchStationsInternalAsync(
-            name: null,
-            country: string.IsNullOrEmpty(countryForApi) ? null : countryForApi,
-            tag: string.IsNullOrEmpty(tagForApi) ? null : tagForApi,
-            orderBy: orderBy);
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var favoriteIds = await _favoritesRepository.GetFavoriteIdsAsync(token);
+            var requestLimit = _settingsService.Settings.MusicOnlyFilter ? 250 : 80;
+
+            var countries = _selectedCountryFilters.Count == 0
+                ? new string?[] { null }
+                : _selectedCountryFilters.Select(MapCountryToApi).Distinct(StringComparer.OrdinalIgnoreCase).Select(c => (string?)c).ToArray();
+
+            var tags = _selectedGenreFilters.Count == 0
+                ? new string?[] { null }
+                : _selectedGenreFilters.Select(MapGenreToApi).Distinct(StringComparer.OrdinalIgnoreCase).Select(t => (string?)t).ToArray();
+
+            var aggregated = new Dictionary<Guid, Station>();
+
+            foreach (var country in countries)
+            {
+                foreach (var tag in tags)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    var stations = await _radioBrowserService.SearchAsync(
+                        name: null,
+                        country: country,
+                        tag: tag,
+                        orderBy: orderBy,
+                        reverse: orderBy != "name",
+                        limit: requestLimit,
+                        cancellationToken: token);
+
+                    foreach (var station in stations)
+                    {
+                        if (!aggregated.ContainsKey(station.StationUuid))
+                        {
+                            aggregated[station.StationUuid] = station;
+                        }
+                    }
+                }
+            }
+
+            var merged = aggregated.Values.ToList();
+            if (_settingsService.Settings.MusicOnlyFilter)
+            {
+                merged = FilterMusicOnlyStations(merged).ToList();
+            }
+
+            merged = orderBy switch
+            {
+                "name" => merged.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList(),
+                "lastchangetime" => merged.OrderByDescending(s => s.LastCheckOkTime).ToList(),
+                _ => merged.OrderByDescending(s => s.ClickCount).ToList()
+            };
+
+            Stations.Clear();
+            var count = 0;
+            foreach (var station in merged.Take(120))
+            {
+                station.IsFavorite = favoriteIds.Contains(station.StationUuid);
+                Stations.Add(station);
+                count++;
+            }
+
+            TotalResults = count;
+        }
+        catch (OperationCanceledException)
+        {
+            // Search was cancelled
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error al aplicar filtros: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task LoadLiveStationsAsync()
@@ -337,6 +415,82 @@ public partial class RadioViewModel : ObservableRecipient
             string.IsNullOrWhiteSpace(SelectedTag) ? null : SelectedTag,
             "clickcount");
     }
+
+    public bool IsGenreFilterSelected(string genre) =>
+        genre == "Todos" ? _selectedGenreFilters.Count == 0 : _selectedGenreFilters.Contains(genre);
+
+    public bool IsCountryFilterSelected(string country) =>
+        country == "Todos" ? _selectedCountryFilters.Count == 0 : _selectedCountryFilters.Contains(country);
+
+    private void ResetMultiFilters()
+    {
+        _selectedGenreFilters.Clear();
+        _selectedCountryFilters.Clear();
+        SyncLegacyActiveFilters();
+    }
+
+    private void SyncLegacyActiveFilters()
+    {
+        ActiveGenreFilter = _selectedGenreFilters.Count == 0 ? string.Empty : string.Join(", ", _selectedGenreFilters);
+        ActiveCountryFilter = _selectedCountryFilters.Count == 0 ? string.Empty : string.Join(", ", _selectedCountryFilters);
+        HasActiveFilters = _selectedGenreFilters.Count > 0 || _selectedCountryFilters.Count > 0;
+    }
+
+    private void UpdateSectionTitleForFilters()
+    {
+        if (!HasActiveFilters)
+        {
+            SectionTitle = GetDefaultTitleForTab();
+            return;
+        }
+
+        if (_selectedCountryFilters.Count > 0 && _selectedGenreFilters.Count > 0)
+        {
+            SectionTitle = $"Emisoras ({_selectedCountryFilters.Count} países · {_selectedGenreFilters.Count} tipos)";
+            return;
+        }
+
+        if (_selectedCountryFilters.Count == 1 && _selectedGenreFilters.Count == 0)
+        {
+            SectionTitle = $"Emisoras de {_selectedCountryFilters.First()}";
+            return;
+        }
+
+        if (_selectedGenreFilters.Count == 1 && _selectedCountryFilters.Count == 0)
+        {
+            SectionTitle = $"Emisoras de {_selectedGenreFilters.First()}";
+            return;
+        }
+
+        if (_selectedCountryFilters.Count > 0)
+        {
+            SectionTitle = $"Emisoras en {_selectedCountryFilters.Count} países";
+            return;
+        }
+
+        SectionTitle = $"Emisoras de {_selectedGenreFilters.Count} tipos";
+    }
+
+    private static string MapCountryToApi(string country) => country switch
+    {
+        "España" => "Spain",
+        "USA" => "United States of America",
+        "UK" => "United Kingdom",
+        "México" => "Mexico",
+        "Francia" => "France",
+        "Alemania" => "Germany",
+        "Argentina" => "Argentina",
+        "Colombia" => "Colombia",
+        _ => country
+    };
+
+    private static string MapGenreToApi(string genre) => genre.ToLowerInvariant() switch
+    {
+        "electrónica" => "electronic",
+        "clásica" => "classical",
+        "hip hop" => "hip-hop",
+        _ => genre.ToLowerInvariant()
+    };
 
     private async Task SearchStationsInternalAsync(string? name, string? country, string? tag, string orderBy)
     {
