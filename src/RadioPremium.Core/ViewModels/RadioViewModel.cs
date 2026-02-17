@@ -280,6 +280,10 @@ public partial class RadioViewModel : ObservableRecipient
             "USA" => "United States of America",
             "UK" => "United Kingdom",
             "México" => "Mexico",
+            "Francia" => "France",
+            "Alemania" => "Germany",
+            "Argentina" => "Argentina",
+            "Colombia" => "Colombia",
             _ => ActiveCountryFilter
         };
 
@@ -431,7 +435,9 @@ public partial class RadioViewModel : ObservableRecipient
 
         SelectedStation = station;
         await _radioBrowserService.ClickStationAsync(station.StationUuid);
-        Messenger.Send(new PlayStationMessage(station));
+
+        // Send queue with all current search results and start with the selected station
+        Messenger.Send(new SetQueueMessage(Stations, station));
     }
 
     [RelayCommand]
