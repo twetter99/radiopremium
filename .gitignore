@@ -25,3 +25,13 @@ Desktop.ini
 # IDE
 .idea/
 *.sln.docstates
+
+# Diagnostic/temp artifacts
+msbuild.binlog
+stderr.txt
+stdout.txt
+xaml_stderr.txt
+xaml_stdout.txt
+
+# Local agent metadata
+.claude/
