@@ -31,7 +31,26 @@ public sealed partial class RadioPage : Page
         ViewModel = App.GetService<RadioViewModel>();
         DataContext = ViewModel;
 
+        GenreChipsScroll.PointerWheelChanged += ChipsScroll_PointerWheelChanged;
+        CountryChipsScroll.PointerWheelChanged += ChipsScroll_PointerWheelChanged;
+
         Loaded += RadioPage_Loaded;
+    }
+
+    private void ChipsScroll_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not ScrollViewer scrollViewer)
+            return;
+
+        var point = e.GetCurrentPoint(scrollViewer);
+        var wheelDelta = point.Properties.MouseWheelDelta;
+
+        if (wheelDelta == 0)
+            return;
+
+        var targetOffset = scrollViewer.HorizontalOffset - (wheelDelta / 120.0 * 72.0);
+        scrollViewer.ChangeView(targetOffset, null, null, true);
+        e.Handled = true;
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

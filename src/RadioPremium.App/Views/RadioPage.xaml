@@ -136,7 +136,7 @@
                 <ScrollViewer 
                     x:Name="GenreChipsScroll"
                     Grid.Column="0"
-                    HorizontalScrollBarVisibility="Hidden"
+                    HorizontalScrollBarVisibility="Auto"
                     VerticalScrollBarVisibility="Disabled"
                     HorizontalScrollMode="Auto">
                     <StackPanel x:Name="GenreChipsPanel" Orientation="Horizontal" Spacing="8">
@@ -156,7 +156,7 @@
                 <ScrollViewer 
                     x:Name="CountryChipsScroll"
                     Grid.Column="0"
-                    HorizontalScrollBarVisibility="Hidden"
+                    HorizontalScrollBarVisibility="Auto"
                     VerticalScrollBarVisibility="Disabled"
                     HorizontalScrollMode="Auto"
                     Visibility="Collapsed">
