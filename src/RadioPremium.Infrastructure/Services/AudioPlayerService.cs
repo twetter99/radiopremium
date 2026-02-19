@@ -13,7 +13,10 @@ public sealed class AudioPlayerService : IAudioPlayerService
 {
     private IWavePlayer? _wavePlayer;
     private MediaFoundationReader? _mediaReader;
+    private BufferedWaveProvider? _bufferedProvider;
     private VolumeWaveProvider16? _volumeProvider;
+    private Thread? _bufferThread;
+    private volatile bool _stopBuffering;
     private Station? _currentStation;
     private CorePlaybackState _state = CorePlaybackState.Stopped;
     private float _volume = 0.8f;
@@ -78,16 +81,47 @@ public sealed class AudioPlayerService : IAudioPlayerService
                 // Create media reader for streaming
                 _mediaReader = new MediaFoundationReader(station.StreamUrl);
 
+                // Convert to 16-bit PCM for consistent processing
+                var pcm16 = _mediaReader.ToSampleProvider().ToWaveProvider16();
+
+                // Buffered provider absorbs network jitter to prevent underruns
+                _bufferedProvider = new BufferedWaveProvider(pcm16.WaveFormat)
+                {
+                    BufferDuration = TimeSpan.FromSeconds(5),
+                    DiscardOnBufferOverflow = true
+                };
+
+                // Start background thread to feed the buffer from the network stream
+                _stopBuffering = false;
+                _bufferThread = new Thread(() => FillBuffer(pcm16))
+                {
+                    IsBackground = true,
+                    Name = "AudioBuffer",
+                    Priority = ThreadPriority.AboveNormal
+                };
+                _bufferThread.Start();
+
+                // Pre-buffer: wait until we have at least 1 second of audio
+                var preBufferBytes = pcm16.WaveFormat.AverageBytesPerSecond;
+                var preBufferDeadline = DateTime.UtcNow.AddSeconds(6);
+                while (_bufferedProvider.BufferedBytes < preBufferBytes
+                       && DateTime.UtcNow < preBufferDeadline
+                       && !cancellationToken.IsCancellationRequested)
+                {
+                    Thread.Sleep(50);
+                }
+
                 // Wrap with volume control
-                _volumeProvider = new VolumeWaveProvider16(_mediaReader.ToSampleProvider().ToWaveProvider16())
+                _volumeProvider = new VolumeWaveProvider16(_bufferedProvider)
                 {
                     Volume = _isMuted ? 0f : _volume
                 };
 
-                // Create wave player
+                // Create wave player with larger buffers for smooth playback
                 _wavePlayer = new WaveOutEvent
                 {
-                    DesiredLatency = 300
+                    DesiredLatency = 500,
+                    NumberOfBuffers = 3
                 };
 
                 _wavePlayer.PlaybackStopped += OnPlaybackStopped;
@@ -166,8 +200,44 @@ public sealed class AudioPlayerService : IAudioPlayerService
         }
     }
 
+    /// <summary>
+    /// Background thread that reads from the network stream and fills the buffer.
+    /// Decouples network I/O from audio rendering to avoid underruns.
+    /// </summary>
+    private void FillBuffer(IWaveProvider source)
+    {
+        var readBuffer = new byte[8192];
+        try
+        {
+            while (!_stopBuffering)
+            {
+                var bytesRead = source.Read(readBuffer, 0, readBuffer.Length);
+                if (bytesRead == 0)
+                {
+                    // Stream ended
+                    Thread.Sleep(50);
+                    continue;
+                }
+                _bufferedProvider?.AddSamples(readBuffer, 0, bytesRead);
+
+                // Throttle if buffer is getting full to avoid wasting CPU
+                if (_bufferedProvider is not null &&
+                    _bufferedProvider.BufferedBytes > _bufferedProvider.WaveFormat.AverageBytesPerSecond * 4)
+                {
+                    Thread.Sleep(100);
+                }
+            }
+        }
+        catch
+        {
+            // Stream error – playback will stop naturally when buffer drains
+        }
+    }
+
     private void CleanupResources()
     {
+        _stopBuffering = true;
+
         if (_wavePlayer is not null)
         {
             _wavePlayer.PlaybackStopped -= OnPlaybackStopped;
@@ -177,6 +247,15 @@ public sealed class AudioPlayerService : IAudioPlayerService
         }
 
         _volumeProvider = null;
+
+        // Wait for buffer thread to finish
+        if (_bufferThread is not null)
+        {
+            _bufferThread.Join(timeout: TimeSpan.FromSeconds(2));
+            _bufferThread = null;
+        }
+
+        _bufferedProvider = null;
 
         if (_mediaReader is not null)
         {
@@ -219,8 +298,9 @@ internal sealed class VolumeWaveProvider16 : IWaveProvider
             for (int i = 0; i < bytesRead; i += 2)
             {
                 var sample = BitConverter.ToInt16(buffer, offset + i);
-                sample = (short)(sample * Volume);
-                var bytes = BitConverter.GetBytes(sample);
+                // Clamp to prevent integer overflow → distortion
+                var scaled = Math.Clamp((int)(sample * Volume), short.MinValue, short.MaxValue);
+                var bytes = BitConverter.GetBytes((short)scaled);
                 buffer[offset + i] = bytes[0];
                 buffer[offset + i + 1] = bytes[1];
             }
