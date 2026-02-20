@@ -161,3 +161,12 @@ public enum NotificationType
     Warning,
     Error
 }
+
+/// <summary>
+/// Message to request opening a URL in the system browser.
+/// Used when Core layer needs to open a browser (e.g. Spotify re-auth).
+/// </summary>
+public sealed class OpenUrlMessage : ValueChangedMessage<string>
+{
+    public OpenUrlMessage(string url) : base(url) { }
+}

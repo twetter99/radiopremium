@@ -43,6 +43,7 @@ public sealed partial class ShellPage : Page
         WeakReferenceMessenger.Default.Register<IdentificationStateChangedMessage>(this, OnIdentificationStateChanged);
         WeakReferenceMessenger.Default.Register<ShowNotificationMessage>(this, OnShowNotification);
         WeakReferenceMessenger.Default.Register<SpotifyAddedMessage>(this, OnSpotifyAdded);
+        WeakReferenceMessenger.Default.Register<OpenUrlMessage>(this, OnOpenUrl);
 
         // Watch IdentifyViewModel Spotify status changes for auto-save UI updates
         _identifyViewModel.PropertyChanged += OnIdentifyViewModelPropertyChanged;
@@ -228,6 +229,14 @@ public sealed partial class ShellPage : Page
                 NotificationBar.Severity = InfoBarSeverity.Success;
                 NotificationBar.IsOpen = true;
             }
+        });
+    }
+
+    private void OnOpenUrl(object recipient, OpenUrlMessage message)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            Helpers.WindowsBrowserLauncher.OpenUrl(message.Value);
         });
     }
 

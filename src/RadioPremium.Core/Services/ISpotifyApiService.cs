@@ -53,9 +53,10 @@ public interface ISpotifyApiService
     Task<bool> IsTrackInPlaylistAsync(string playlistId, string trackUri, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Save a track to the user's Liked Songs (library)
+    /// Save a track to the user's Liked Songs (library).
+    /// Returns (Success, ScopeError) — ScopeError is true when the token lacks user-library-modify.
     /// </summary>
-    Task<bool> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default);
+    Task<(bool Success, bool ScopeError)> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Check if a track is already in the user's Liked Songs

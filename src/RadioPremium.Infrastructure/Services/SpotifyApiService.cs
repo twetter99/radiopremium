@@ -251,7 +251,7 @@ public sealed class SpotifyApiService : ISpotifyApiService
         return result?.Items?.Any(i => i.Track?.Uri == trackUri) ?? false;
     }
 
-    public async Task<bool> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default)
+    public async Task<(bool Success, bool ScopeError)> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -272,14 +272,21 @@ public sealed class SpotifyApiService : ISpotifyApiService
                 File.WriteAllText(
                     Path.Combine(AppContext.BaseDirectory, "spotify_error.log"),
                     $"[{DateTime.Now:HH:mm:ss}] PUT /me/tracks - {response.StatusCode}\nBody: {body}\nResponse: {errorBody}\n");
+
+                // 403 Forbidden = missing user-library-modify scope
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    await _authService.LogoutAsync();
+                    return (false, true);
+                }
             }
 
-            return response.IsSuccessStatusCode;
+            return (response.IsSuccessStatusCode, false);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[Spotify] SaveToLikedSongs exception: {ex.Message}");
-            return false;
+            return (false, false);
         }
     }
 
@@ -342,10 +349,14 @@ public sealed class SpotifyApiService : ISpotifyApiService
             }
 
             // Save to Liked Songs
-            var saved = await SaveToLikedSongsAsync(spotifyTrack.Id, cancellationToken);
+            var (saved, scopeError) = await SaveToLikedSongsAsync(spotifyTrack.Id, cancellationToken);
 
             if (!saved)
             {
+                if (scopeError)
+                {
+                    return (false, spotifyTrack, "SCOPE_ERROR");
+                }
                 return (false, spotifyTrack, "Error al guardar en Liked Songs");
             }
 

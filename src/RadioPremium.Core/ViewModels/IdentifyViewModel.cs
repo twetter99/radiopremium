@@ -256,28 +256,24 @@ public partial class IdentifyViewModel : ObservableRecipient
 
             var (success, spotifyTrack, errorMessage) = await _spotifyApiService.SaveIdentifiedTrackToLikedSongsAsync(track, cancellationToken);
 
+            // Handle scope error: force re-auth with updated scopes and retry
+            if (!success && errorMessage == "SCOPE_ERROR")
+            {
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Scope error - starting Spotify re-authentication\n");
+                SpotifyStatusMessage = "Reconectando Spotify con permisos actualizados...";
+
+                var reauthResult = await ReauthenticateAndRetryAsync(track, cancellationToken);
+                if (reauthResult)
+                    return; // Success after re-auth
+
+                SpotifyStatusMessage = "No se pudo reconectar. Ve a Ajustes > Spotify.";
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth failed\n");
+                return;
+            }
+
             if (success && spotifyTrack is not null)
             {
-                SavedToSpotify = true;
-                SpotifyStatusMessage = "♥ Guardada en tus Me gusta de Spotify";
-                SpotifyArtworkUrl = spotifyTrack.ArtworkUrl;
-                SpotifyTrackName = spotifyTrack.Name;
-                SpotifyArtistName = spotifyTrack.PrimaryArtist;
-
-                // Update the track's artwork if we got a better one from Spotify
-                if (!string.IsNullOrEmpty(spotifyTrack.ArtworkUrl) && string.IsNullOrEmpty(track.ArtworkUrl))
-                {
-                    track.ArtworkUrl = spotifyTrack.ArtworkUrl;
-                    IdentifiedTrack = null; // Force rebind
-                    IdentifiedTrack = track;
-                }
-
-                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Saved to Spotify Liked Songs: {spotifyTrack.Name} by {spotifyTrack.PrimaryArtist}\n");
-
-                WeakReferenceMessenger.Default.Send(new ShowNotificationMessage(
-                    "Guardada en Spotify",
-                    $"{spotifyTrack.Name} - {spotifyTrack.PrimaryArtist} añadida a Me gusta",
-                    NotificationType.Success));
+                ApplySpotifySuccess(track, spotifyTrack);
             }
             else
             {
@@ -293,6 +289,71 @@ public partial class IdentifyViewModel : ObservableRecipient
         finally
         {
             IsSavingToSpotify = false;
+        }
+    }
+
+    private void ApplySpotifySuccess(Track track, SpotifyTrack spotifyTrack)
+    {
+        SavedToSpotify = true;
+        SpotifyStatusMessage = "♥ Guardada en tus Me gusta de Spotify";
+        SpotifyArtworkUrl = spotifyTrack.ArtworkUrl;
+        SpotifyTrackName = spotifyTrack.Name;
+        SpotifyArtistName = spotifyTrack.PrimaryArtist;
+
+        // Update the track's artwork if we got a better one from Spotify
+        if (!string.IsNullOrEmpty(spotifyTrack.ArtworkUrl) && string.IsNullOrEmpty(track.ArtworkUrl))
+        {
+            track.ArtworkUrl = spotifyTrack.ArtworkUrl;
+            IdentifiedTrack = null; // Force rebind
+            IdentifiedTrack = track;
+        }
+
+        File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Saved to Spotify Liked Songs: {spotifyTrack.Name} by {spotifyTrack.PrimaryArtist}\n");
+
+        WeakReferenceMessenger.Default.Send(new ShowNotificationMessage(
+            "Guardada en Spotify",
+            $"{spotifyTrack.Name} - {spotifyTrack.PrimaryArtist} añadida a Me gusta",
+            NotificationType.Success));
+    }
+
+    /// <summary>
+    /// Re-authenticates with Spotify (to get updated scopes) and retries saving.
+    /// Opens browser for OAuth login, waits for completion, then retries.
+    /// </summary>
+    private async Task<bool> ReauthenticateAndRetryAsync(Track track, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var (authUrl, completionTask) = _spotifyAuthService.StartLoginFlow(cancellationToken);
+
+            // Ask the UI layer to open the browser
+            WeakReferenceMessenger.Default.Send(new OpenUrlMessage(authUrl));
+
+            var loginSuccess = await completionTask;
+            if (!loginSuccess)
+            {
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth login failed or cancelled\n");
+                return false;
+            }
+
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth successful, retrying save\n");
+            SpotifyStatusMessage = "Guardando en Spotify...";
+
+            var (success, spotifyTrack, error) = await _spotifyApiService.SaveIdentifiedTrackToLikedSongsAsync(track, cancellationToken);
+            if (success && spotifyTrack is not null)
+            {
+                ApplySpotifySuccess(track, spotifyTrack);
+                return true;
+            }
+
+            SpotifyStatusMessage = error ?? "Error al guardar";
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Retry after re-auth failed: {error}\n");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth exception: {ex.Message}\n");
+            return false;
         }
     }
 
