@@ -256,24 +256,14 @@ public partial class IdentifyViewModel : ObservableRecipient
 
             var (success, spotifyTrack, errorMessage) = await _spotifyApiService.SaveIdentifiedTrackToLikedSongsAsync(track, cancellationToken);
 
-            // Handle scope error: force re-auth with updated scopes and retry
-            if (!success && errorMessage == "SCOPE_ERROR")
-            {
-                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Scope error - starting Spotify re-authentication\n");
-                SpotifyStatusMessage = "Reconectando Spotify con permisos actualizados...";
-
-                var reauthResult = await ReauthenticateAndRetryAsync(track, cancellationToken);
-                if (reauthResult)
-                    return; // Success after re-auth
-
-                SpotifyStatusMessage = "No se pudo reconectar. Ve a Ajustes > Spotify.";
-                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth failed\n");
-                return;
-            }
-
             if (success && spotifyTrack is not null)
             {
                 ApplySpotifySuccess(track, spotifyTrack);
+            }
+            else if (errorMessage == "SCOPE_ERROR")
+            {
+                SpotifyStatusMessage = "Permisos insuficientes. Ve a Ajustes y reconecta Spotify.";
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Spotify scope error (403) - user must reconnect in Settings\n");
             }
             else
             {
@@ -314,47 +304,6 @@ public partial class IdentifyViewModel : ObservableRecipient
             "Guardada en Spotify",
             $"{spotifyTrack.Name} - {spotifyTrack.PrimaryArtist} añadida a Me gusta",
             NotificationType.Success));
-    }
-
-    /// <summary>
-    /// Re-authenticates with Spotify (to get updated scopes) and retries saving.
-    /// Opens browser for OAuth login, waits for completion, then retries.
-    /// </summary>
-    private async Task<bool> ReauthenticateAndRetryAsync(Track track, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var (authUrl, completionTask) = _spotifyAuthService.StartLoginFlow(cancellationToken);
-
-            // Ask the UI layer to open the browser
-            WeakReferenceMessenger.Default.Send(new OpenUrlMessage(authUrl));
-
-            var loginSuccess = await completionTask;
-            if (!loginSuccess)
-            {
-                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth login failed or cancelled\n");
-                return false;
-            }
-
-            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth successful, retrying save\n");
-            SpotifyStatusMessage = "Guardando en Spotify...";
-
-            var (success, spotifyTrack, error) = await _spotifyApiService.SaveIdentifiedTrackToLikedSongsAsync(track, cancellationToken);
-            if (success && spotifyTrack is not null)
-            {
-                ApplySpotifySuccess(track, spotifyTrack);
-                return true;
-            }
-
-            SpotifyStatusMessage = error ?? "Error al guardar";
-            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Retry after re-auth failed: {error}\n");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Re-auth exception: {ex.Message}\n");
-            return false;
-        }
     }
 
     [RelayCommand]

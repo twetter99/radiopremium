@@ -273,10 +273,9 @@ public sealed class SpotifyApiService : ISpotifyApiService
                     Path.Combine(AppContext.BaseDirectory, "spotify_error.log"),
                     $"[{DateTime.Now:HH:mm:ss}] PUT /me/tracks - {response.StatusCode}\nBody: {body}\nResponse: {errorBody}\n");
 
-                // 403 Forbidden = missing user-library-modify scope
+                // 403 Forbidden = missing user-library-modify scope — do NOT logout, just signal
                 if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
-                    await _authService.LogoutAsync();
                     return (false, true);
                 }
             }
@@ -361,11 +360,6 @@ public sealed class SpotifyApiService : ISpotifyApiService
             }
 
             return (true, spotifyTrack, null);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("No authenticated"))
-        {
-            // Token was invalidated (e.g. refresh failed due to missing scopes)
-            return (false, null, "SCOPE_ERROR");
         }
         catch (Exception ex)
         {
