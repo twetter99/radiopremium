@@ -111,4 +111,5 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnCaptureSecondsChanged(int value) => _ = SaveSettingsAsync();
     partial void OnShowNotificationsChanged(bool value) => _ = SaveSettingsAsync();
     partial void OnDefaultCountryChanged(string value) => _ = SaveSettingsAsync();
+    partial void OnMusicOnlyFilterChanged(bool value) => _ = SaveSettingsAsync();
 }

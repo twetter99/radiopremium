@@ -131,10 +131,12 @@ public partial class IdentifyViewModel : ObservableRecipient
 
         try
         {
-            // Capture 10 seconds of audio
+            // Capture audio using configured duration
+            var captureSecs = _settingsService.Settings.CaptureSeconds;
+            if (captureSecs <= 0) captureSecs = 10;
             State = CaptureState.Capturing;
             var captureResult = await _loopbackCaptureService.CaptureAsync(
-                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(captureSecs),
                 token);
 
             if (!captureResult.Success)

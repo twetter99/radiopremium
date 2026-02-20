@@ -49,6 +49,8 @@ public partial class PlayerViewModel : ObservableRecipient
     public bool CanPlayNext => _queueService.HasNext;
     public bool CanPlayPrevious => _queueService.HasPrevious;
 
+    private bool _suppressSettingsSave;
+
     public PlayerViewModel(
         IAudioPlayerService audioPlayerService,
         IFavoritesRepository favoritesRepository,
@@ -66,7 +68,31 @@ public partial class PlayerViewModel : ObservableRecipient
         _audioPlayerService.ErrorOccurred += OnPlaybackError;
         _queueService.QueueChanged += OnQueueChanged;
 
+        // React to settings changes made from the Settings page
+        _settingsService.SettingsChanged += OnSettingsChanged;
+
         IsActive = true;
+    }
+
+    /// <summary>
+    /// Applies persisted settings (called once at startup after LoadAsync).
+    /// </summary>
+    public void ApplySettings(AppSettings settings)
+    {
+        _suppressSettingsSave = true;
+        Volume = settings.Volume;
+        _suppressSettingsSave = false;
+    }
+
+    private void OnSettingsChanged(object? sender, AppSettings settings)
+    {
+        // Sync volume if it changed from the Settings page
+        if (Math.Abs(Volume - settings.Volume) > 0.001f)
+        {
+            _suppressSettingsSave = true;
+            Volume = settings.Volume;
+            _suppressSettingsSave = false;
+        }
     }
 
     private void OnQueueChanged(object? sender, EventArgs e)
@@ -195,6 +221,13 @@ public partial class PlayerViewModel : ObservableRecipient
     {
         _audioPlayerService.Volume = value;
         Messenger.Send(new VolumeChangedMessage(value));
+
+        // Persist volume to settings (unless we're applying settings to avoid infinite loop)
+        if (!_suppressSettingsSave)
+        {
+            _settingsService.Settings.Volume = value;
+            _ = _settingsService.SaveAsync();
+        }
     }
 
     partial void OnIsMutedChanged(bool value)

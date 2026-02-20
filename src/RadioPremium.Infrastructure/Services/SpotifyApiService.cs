@@ -253,42 +253,60 @@ public sealed class SpotifyApiService : ISpotifyApiService
 
     public async Task<bool> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default)
     {
-        // Check if already saved
-        if (await IsTrackSavedAsync(trackId, cancellationToken))
+        try
         {
-            return true; // Already in Liked Songs
+            var request = await CreateAuthorizedRequestAsync(
+                HttpMethod.Put,
+                "/me/tracks",
+                cancellationToken);
+
+            var body = JsonSerializer.Serialize(new { ids = new[] { trackId } }, _jsonOptions);
+            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                System.Diagnostics.Debug.WriteLine($"[Spotify] SaveToLikedSongs failed: {response.StatusCode} - {errorBody}");
+                File.WriteAllText(
+                    Path.Combine(AppContext.BaseDirectory, "spotify_error.log"),
+                    $"[{DateTime.Now:HH:mm:ss}] PUT /me/tracks - {response.StatusCode}\nBody: {body}\nResponse: {errorBody}\n");
+            }
+
+            return response.IsSuccessStatusCode;
         }
-
-        var request = await CreateAuthorizedRequestAsync(
-            HttpMethod.Put,
-            $"/me/tracks?ids={trackId}",
-            cancellationToken);
-
-        request.Content = new StringContent(
-            JsonSerializer.Serialize(new { ids = new[] { trackId } }, _jsonOptions),
-            Encoding.UTF8,
-            "application/json");
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        return response.IsSuccessStatusCode;
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Spotify] SaveToLikedSongs exception: {ex.Message}");
+            return false;
+        }
     }
 
     public async Task<bool> IsTrackSavedAsync(string trackId, CancellationToken cancellationToken = default)
     {
-        var request = await CreateAuthorizedRequestAsync(
-            HttpMethod.Get,
-            $"/me/tracks/contains?ids={trackId}",
-            cancellationToken);
+        try
+        {
+            var request = await CreateAuthorizedRequestAsync(
+                HttpMethod.Get,
+                $"/me/tracks/contains?ids={trackId}",
+                cancellationToken);
 
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Spotify] IsTrackSaved failed: {response.StatusCode}");
+                return false;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<bool[]>(_jsonOptions, cancellationToken);
+            return result?.FirstOrDefault() ?? false;
+        }
+        catch
         {
             return false;
         }
-
-        var result = await response.Content.ReadFromJsonAsync<bool[]>(_jsonOptions, cancellationToken);
-        return result?.FirstOrDefault() ?? false;
     }
 
     public async Task<SpotifyTrack?> FindSpotifyTrackAsync(Track track, CancellationToken cancellationToken = default)

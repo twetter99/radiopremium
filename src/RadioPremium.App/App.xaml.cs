@@ -208,8 +208,16 @@ public partial class App : Application
         return services.BuildServiceProvider();
     }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Load user settings from disk before creating any window/ViewModel
+        var settingsService = Services.GetRequiredService<ISettingsService>();
+        await settingsService.LoadAsync();
+
+        // Initialize PlayerViewModel volume from persisted settings
+        var playerVm = Services.GetRequiredService<PlayerViewModel>();
+        playerVm.ApplySettings(settingsService.Settings);
+
         _window = new MainWindow();
         _window.Activate();
     }
