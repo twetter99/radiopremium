@@ -262,7 +262,7 @@ public partial class IdentifyViewModel : ObservableRecipient
             }
             else
             {
-                SpotifyStatusMessage = errorMessage ?? "No se encontró en Spotify";
+                SpotifyStatusMessage = FriendlyError(errorMessage);
                 File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Failed to save to Spotify: {errorMessage}\n");
             }
         }
@@ -319,9 +319,16 @@ public partial class IdentifyViewModel : ObservableRecipient
                 _pendingSaveTrack = null;
                 ApplySpotifySuccess(track, spotifyTrack);
             }
+            else if (error == "SCOPE_ERROR")
+            {
+                // Still can't save even after re-auth — show reconnect button again
+                _pendingSaveTrack = track;
+                SpotifyStatusMessage = "Permisos insuficientes. Ve a Ajustes y reconecta Spotify.";
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave: retry also got SCOPE_ERROR\n");
+            }
             else
             {
-                SpotifyStatusMessage = error ?? "No se pudo guardar";
+                SpotifyStatusMessage = FriendlyError(error);
                 File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave: retry failed: {error}\n");
             }
         }
@@ -335,6 +342,13 @@ public partial class IdentifyViewModel : ObservableRecipient
             IsSavingToSpotify = false;
         }
     }
+
+    private static string FriendlyError(string? error) => error switch
+    {
+        "SCOPE_ERROR" => "Permisos insuficientes. Ve a Ajustes y reconecta Spotify.",
+        null => "No se encontró en Spotify",
+        _ => error
+    };
 
     private void ApplySpotifySuccess(Track track, SpotifyTrack spotifyTrack)
     {
