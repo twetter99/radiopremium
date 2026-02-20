@@ -23,6 +23,7 @@ public partial class IdentifyViewModel : ObservableRecipient
     private readonly string _logPath;
     private CancellationTokenSource? _identifyCts;
     private Station? _currentStation;
+    private Track? _pendingSaveTrack; // track waiting for re-auth before save
 
     [ObservableProperty]
     private CaptureState _state = CaptureState.Idle;
@@ -255,8 +256,9 @@ public partial class IdentifyViewModel : ObservableRecipient
             }
             else if (errorMessage == "SCOPE_ERROR")
             {
+                _pendingSaveTrack = track; // remember so ReconnectAndSave can retry
                 SpotifyStatusMessage = "Permisos insuficientes. Ve a Ajustes y reconecta Spotify.";
-                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Spotify scope error (403) - user must reconnect in Settings\n");
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Spotify scope error - waiting for user to reconnect\n");
             }
             else
             {
@@ -268,6 +270,65 @@ public partial class IdentifyViewModel : ObservableRecipient
         {
             SpotifyStatusMessage = "Error al guardar en Spotify";
             File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Error saving to Spotify: {ex.Message}\n");
+        }
+        finally
+        {
+            IsSavingToSpotify = false;
+        }
+    }
+
+    /// <summary>
+    /// Logs out, starts a fresh OAuth flow, opens browser, waits for callback, then retries saving.
+    /// Called from the 'Reconectar Spotify' button in the track dialog.
+    /// </summary>
+    [RelayCommand]
+    private async Task ReconnectAndSaveAsync()
+    {
+        var track = _pendingSaveTrack ?? IdentifiedTrack;
+        if (track is null) return;
+
+        try
+        {
+            IsSavingToSpotify = true;
+            SpotifyStatusMessage = "Abriendo Spotify...";
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave started\n");
+
+            // Clear stale token so StartLoginFlow gets a clean state
+            await _spotifyAuthService.LogoutAsync();
+
+            // Start OAuth flow — also cancels any previous stuck listener
+            var (authUrl, completionTask) = _spotifyAuthService.StartLoginFlow();
+            WeakReferenceMessenger.Default.Send(new OpenUrlMessage(authUrl));
+
+            SpotifyStatusMessage = "Esperando autorización en el navegador...";
+            var loginSuccess = await completionTask;
+
+            if (!loginSuccess)
+            {
+                SpotifyStatusMessage = "Autorización cancelada. Vuelve a intentarlo.";
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave: login cancelled/failed\n");
+                return;
+            }
+
+            SpotifyStatusMessage = "Guardando en Spotify...";
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave: login OK, retrying save\n");
+
+            var (success, spotifyTrack, error) = await _spotifyApiService.SaveIdentifiedTrackToLikedSongsAsync(track);
+            if (success && spotifyTrack is not null)
+            {
+                _pendingSaveTrack = null;
+                ApplySpotifySuccess(track, spotifyTrack);
+            }
+            else
+            {
+                SpotifyStatusMessage = error ?? "No se pudo guardar";
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave: retry failed: {error}\n");
+            }
+        }
+        catch (Exception ex)
+        {
+            SpotifyStatusMessage = "Error al reconectar";
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave exception: {ex.Message}\n");
         }
         finally
         {

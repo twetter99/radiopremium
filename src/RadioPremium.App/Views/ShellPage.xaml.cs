@@ -333,16 +333,12 @@ public sealed partial class ShellPage : Page
         TrackIdentifiedOverlay.Visibility = Visibility.Collapsed;
     }
 
-    private async void SpotifyReconnect_Click(object sender, RoutedEventArgs e)
+    private void SpotifyReconnect_Click(object sender, RoutedEventArgs e)
     {
         SpotifyReconnectButton.IsEnabled = false;
-        SpotifySaveStatusText.Text = "Reconectando...";
         SpotifyReconnectButton.Visibility = Visibility.Collapsed;
-
-        // Logout then trigger fresh login with updated scopes
-        var authService = App.GetService<ISpotifyAuthService>();
-        await authService.LogoutAsync();
-        _spotifyViewModel.LoginCommand.Execute(null);
+        // All reconnect + retry logic lives in IdentifyViewModel.ReconnectAndSaveCommand
+        _identifyViewModel.ReconnectAndSaveCommand.Execute(null);
     }
 
     private void CloseOverlay_Click(object sender, RoutedEventArgs e)

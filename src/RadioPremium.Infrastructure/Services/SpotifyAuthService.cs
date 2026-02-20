@@ -21,6 +21,7 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
 
     private string? _codeVerifier;
     private SpotifyTokens? _tokens;
+    private CancellationTokenSource? _loginCts; // tracks the active login listener
 
     private const string TokenUrl = "https://accounts.spotify.com/api/token";
     private const string AuthorizeUrl = "https://accounts.spotify.com/authorize";
@@ -277,6 +278,11 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
 
     public (string AuthUrl, Task<bool> CompletionTask) StartLoginFlow(CancellationToken cancellationToken = default)
     {
+        // Cancel any previous login flow to free the port before starting a new one
+        try { _loginCts?.Cancel(); _loginCts?.Dispose(); } catch { }
+        _loginCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var flowToken = _loginCts.Token;
+
         var authUrl = GetAuthorizationUrl();
 
         // Extract the port from the redirect URI to start a listener
@@ -293,7 +299,7 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
                 listener.Start();
 
                 // Wait for the callback (timeout after 5 minutes)
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(flowToken);
                 cts.CancelAfter(TimeSpan.FromMinutes(5));
 
                 var contextTask = listener.GetContextAsync();
@@ -329,12 +335,12 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
                 context.Response.ContentType = "text/html; charset=utf-8";
                 context.Response.ContentLength64 = responseBytes.Length;
                 context.Response.StatusCode = 200;
-                await context.Response.OutputStream.WriteAsync(responseBytes, cancellationToken);
+                await context.Response.OutputStream.WriteAsync(responseBytes, flowToken);
                 context.Response.Close();
 
                 if (callbackUri is not null)
                 {
-                    return await HandleCallbackAsync(callbackUri, cancellationToken);
+                    return await HandleCallbackAsync(callbackUri, flowToken);
                 }
 
                 return false;
