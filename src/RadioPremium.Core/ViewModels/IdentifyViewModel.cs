@@ -195,9 +195,6 @@ public partial class IdentifyViewModel : ObservableRecipient
                     "Canción identificada",
                     identifyResult.Track.DisplayText,
                     NotificationType.Success));
-
-                // Auto-save to Spotify Liked Songs if authenticated
-                _ = SaveToSpotifyLikedSongsAsync(identifyResult.Track, token);
             }
             else
             {
@@ -253,6 +250,15 @@ public partial class IdentifyViewModel : ObservableRecipient
             if (success && spotifyTrack is not null)
             {
                 ApplySpotifySuccess(track, spotifyTrack);
+            }
+            else if (errorMessage == "FALLBACK_PLAYLIST_OK" && spotifyTrack is not null)
+            {
+                SavedToSpotify = true;
+                SpotifyArtworkUrl = spotifyTrack.ArtworkUrl;
+                SpotifyTrackName = spotifyTrack.Name;
+                SpotifyArtistName = spotifyTrack.PrimaryArtist;
+                SpotifyStatusMessage = "Guardada en Spotify: playlist 'Radio Likes' (Liked Songs bloqueado por Spotify)";
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Saved using fallback playlist: {spotifyTrack.Name}\n");
             }
             else if (errorMessage == "SCOPE_ERROR")
             {

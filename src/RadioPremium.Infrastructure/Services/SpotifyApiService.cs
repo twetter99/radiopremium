@@ -383,6 +383,18 @@ public sealed class SpotifyApiService : ISpotifyApiService
                 }
                 if (forbiddenError)
                 {
+                    // Practical fallback: if Liked Songs is blocked by Spotify (403),
+                    // save to our own playlist so the song is not lost.
+                    var playlist = await GetOrCreateRadioLikesPlaylistAsync(cancellationToken);
+                    if (playlist is not null)
+                    {
+                        var added = await AddTrackToPlaylistAsync(playlist.Id, spotifyTrack.Uri, cancellationToken);
+                        if (added)
+                        {
+                            return (false, spotifyTrack, "FALLBACK_PLAYLIST_OK");
+                        }
+                    }
+
                     var currentUser = await GetCurrentUserAsync(cancellationToken);
                     var userHint = currentUser is null
                         ? "No se pudo leer el perfil de Spotify actual."

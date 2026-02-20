@@ -264,17 +264,6 @@ public sealed partial class ShellPage : Page
         SpotifyReconnectButton.IsEnabled = true;
         AddToSpotifyButton.Visibility = Visibility.Visible;
 
-        // If Spotify is authenticated, show saving status (auto-save will start)
-        var authService = App.GetService<ISpotifyAuthService>();
-        if (authService.IsAuthenticated)
-        {
-            AddToSpotifyButton.Visibility = Visibility.Collapsed;
-            SpotifyAutoSavePanel.Visibility = Visibility.Visible;
-            SpotifySaveProgressRing.Visibility = Visibility.Visible;
-            SpotifySaveStatusText.Text = "Guardando en Spotify...";
-            SpotifySaveStatusText.Foreground = (Brush)Application.Current.Resources["TextSecondaryBrush"];
-        }
-
         TrackIdentifiedOverlay.Visibility = Visibility.Visible;
     }
 
