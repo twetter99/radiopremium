@@ -99,7 +99,7 @@ public sealed class SpotifyTokens
     public DateTime ExpiresAt { get; set; }
     public string Scope { get; set; } = string.Empty;
 
-    public bool IsExpired => DateTime.UtcNow >= ExpiresAt.AddMinutes(-5);
+    public bool IsExpired => ExpiresAt <= DateTime.MinValue || DateTime.UtcNow >= ExpiresAt.AddMinutes(-5);
 }
 
 /// <summary>
