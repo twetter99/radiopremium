@@ -260,6 +260,8 @@ public sealed partial class ShellPage : Page
         // Reset Spotify auto-save UI
         SpotifyAutoSavePanel.Visibility = Visibility.Collapsed;
         SpotifySaveProgressRing.Visibility = Visibility.Collapsed;
+        SpotifyReconnectButton.Visibility = Visibility.Collapsed;
+        SpotifyReconnectButton.IsEnabled = true;
         AddToSpotifyButton.Visibility = Visibility.Visible;
 
         // If Spotify is authenticated, show saving status (auto-save will start)
@@ -302,11 +304,14 @@ public sealed partial class ShellPage : Page
                         SpotifyAutoSavePanel.Visibility = Visibility.Visible;
                         SpotifySaveStatusText.Text = _identifyViewModel.SpotifyStatusMessage;
 
+                        var isScopeError = _identifyViewModel.SpotifyStatusMessage.Contains("Permisos insuficientes");
+                        SpotifyReconnectButton.Visibility = isScopeError ? Visibility.Visible : Visibility.Collapsed;
+
                         // If not saved, show fallback button and use warning color
                         if (!_identifyViewModel.SavedToSpotify && !_identifyViewModel.IsSavingToSpotify)
                         {
                             SpotifySaveStatusText.Foreground = (Brush)Application.Current.Resources["TextSecondaryBrush"];
-                            AddToSpotifyButton.Visibility = Visibility.Visible;
+                            AddToSpotifyButton.Visibility = isScopeError ? Visibility.Collapsed : Visibility.Visible;
                         }
                     }
                     break;
@@ -326,6 +331,18 @@ public sealed partial class ShellPage : Page
     private void CloseTrackCard_Click(object sender, RoutedEventArgs e)
     {
         TrackIdentifiedOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private async void SpotifyReconnect_Click(object sender, RoutedEventArgs e)
+    {
+        SpotifyReconnectButton.IsEnabled = false;
+        SpotifySaveStatusText.Text = "Reconectando...";
+        SpotifyReconnectButton.Visibility = Visibility.Collapsed;
+
+        // Logout then trigger fresh login with updated scopes
+        var authService = App.GetService<ISpotifyAuthService>();
+        await authService.LogoutAsync();
+        _spotifyViewModel.LoginCommand.Execute(null);
     }
 
     private void CloseOverlay_Click(object sender, RoutedEventArgs e)
