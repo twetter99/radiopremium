@@ -77,13 +77,9 @@ public partial class SpotifyViewModel : ObservableRecipient
 
             var authUrl = _authService.GetAuthorizationUrl();
             
-            // Open browser for authentication
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = authUrl,
-                UseShellExecute = true
-            };
-            System.Diagnostics.Process.Start(psi);
+            // Raise event so the UI layer can open the URL in a Windows browser
+            // (avoids Parallels intercepting and opening in macOS)
+            LoginUrlGenerated?.Invoke(this, authUrl);
         }
         catch (Exception ex)
         {
@@ -94,6 +90,12 @@ public partial class SpotifyViewModel : ObservableRecipient
             IsLoading = false;
         }
     }
+
+    /// <summary>
+    /// Event raised when a login URL is generated and needs to be opened in a browser.
+    /// The UI layer handles this to ensure the URL opens in a Windows browser.
+    /// </summary>
+    public event EventHandler<string>? LoginUrlGenerated;
 
     public async Task HandleCallbackAsync(Uri callbackUri)
     {

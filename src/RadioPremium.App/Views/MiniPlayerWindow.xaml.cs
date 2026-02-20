@@ -180,10 +180,10 @@ public sealed partial class MiniPlayerWindow : Window
         
         if (result == ContentDialogResult.Primary)
         {
-            // Open Spotify search
+            // Open Spotify search in a Windows browser (Parallels compatible)
             var searchQuery = Uri.EscapeDataString($"{track.Title} {track.Artist}");
             var spotifyUrl = $"https://open.spotify.com/search/{searchQuery}";
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(spotifyUrl));
+            Helpers.WindowsBrowserLauncher.OpenUrl(spotifyUrl);
         }
     }
 

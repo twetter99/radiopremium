@@ -47,6 +47,12 @@ public sealed partial class ShellPage : Page
         // Watch IdentifyViewModel Spotify status changes for auto-save UI updates
         _identifyViewModel.PropertyChanged += OnIdentifyViewModelPropertyChanged;
 
+        // Handle Spotify login URL opening in a Windows browser (Parallels compatible)
+        _spotifyViewModel.LoginUrlGenerated += (s, url) =>
+        {
+            Helpers.WindowsBrowserLauncher.OpenUrl(url);
+        };
+
         // Navigate to Radio page by default
         ContentFrame.Navigate(typeof(RadioPage));
         _selectedNavButton = RadioNavButton;
@@ -318,28 +324,13 @@ public sealed partial class ShellPage : Page
         TrackIdentifiedOverlay.Visibility = Visibility.Collapsed;
     }
 
-    private async void AddToSpotify_Click(object sender, RoutedEventArgs e)
+    private void AddToSpotify_Click(object sender, RoutedEventArgs e)
     {
         if (_currentTrack is not null)
         {
-            // Abrir Spotify con la búsqueda de la canción exacta
             var searchQuery = Uri.EscapeDataString($"{_currentTrack.Title} {_currentTrack.Artist}");
             var spotifySearchUrl = $"https://open.spotify.com/search/{searchQuery}";
-            
-            try
-            {
-                // Intentar abrir la app de Spotify primero, si no, abre el navegador
-                await Windows.System.Launcher.LaunchUriAsync(new Uri(spotifySearchUrl));
-            }
-            catch
-            {
-                // Fallback: abrir en navegador
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = spotifySearchUrl,
-                    UseShellExecute = true
-                });
-            }
+            Helpers.WindowsBrowserLauncher.OpenUrl(spotifySearchUrl);
         }
     }
 
@@ -382,26 +373,13 @@ public sealed partial class ShellPage : Page
         }
     }
 
-    public async void AddToSpotify()
+    public void AddToSpotify()
     {
         if (_currentTrack is not null && TrackIdentifiedCard.Visibility == Visibility.Visible)
         {
-            // Abrir Spotify con la búsqueda de la canción exacta
             var searchQuery = Uri.EscapeDataString($"{_currentTrack.Title} {_currentTrack.Artist}");
             var spotifySearchUrl = $"https://open.spotify.com/search/{searchQuery}";
-            
-            try
-            {
-                await Windows.System.Launcher.LaunchUriAsync(new Uri(spotifySearchUrl));
-            }
-            catch
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = spotifySearchUrl,
-                    UseShellExecute = true
-                });
-            }
+            Helpers.WindowsBrowserLauncher.OpenUrl(spotifySearchUrl);
         }
     }
 
