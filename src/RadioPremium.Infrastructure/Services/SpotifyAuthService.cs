@@ -109,7 +109,8 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
             ["code_challenge_method"] = "S256",
             ["code_challenge"] = codeChallenge,
             ["state"] = state,
-            ["scope"] = _settings.Scopes
+            ["scope"] = _settings.Scopes,
+            ["show_dialog"] = "true"
         };
 
         var queryString = string.Join("&", queryParams.Select(kvp =>

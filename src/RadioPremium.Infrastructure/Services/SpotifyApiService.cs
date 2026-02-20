@@ -274,15 +274,18 @@ public sealed class SpotifyApiService : ISpotifyApiService
             if (!response.IsSuccessStatusCode)
             {
                 var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                var authHeader = string.Join(" | ", response.Headers.WwwAuthenticate.Select(h => h.ToString()));
                 System.Diagnostics.Debug.WriteLine($"[Spotify] SaveToLikedSongs failed: {response.StatusCode} - {errorBody}");
                 File.WriteAllText(
                     Path.Combine(AppContext.BaseDirectory, "spotify_error.log"),
-                    $"[{DateTime.Now:HH:mm:ss}] PUT /me/tracks - {response.StatusCode}\nBody: {body}\nResponse: {errorBody}\n");
+                    $"[{DateTime.Now:HH:mm:ss}] PUT /me/tracks - {response.StatusCode}\nBody: {body}\nWWW-Authenticate: {authHeader}\nResponse: {errorBody}\n");
 
-                // 403 Forbidden = missing user-library-modify scope — do NOT logout, just signal
+                // 403 is only a scope error when Spotify explicitly indicates insufficient_scope.
                 if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
-                    return (false, true);
+                    var isInsufficientScope = authHeader.Contains("insufficient_scope", StringComparison.OrdinalIgnoreCase) ||
+                                              authHeader.Contains("user-library-modify", StringComparison.OrdinalIgnoreCase);
+                    return (false, isInsufficientScope);
                 }
             }
 

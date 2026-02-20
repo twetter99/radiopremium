@@ -306,6 +306,7 @@ public sealed partial class ShellPage : Page
 
                         var isScopeError = _identifyViewModel.SpotifyStatusMessage.Contains("Permisos insuficientes");
                         SpotifyReconnectButton.Visibility = isScopeError ? Visibility.Visible : Visibility.Collapsed;
+                        SpotifyReconnectButton.IsEnabled = isScopeError;
 
                         // If not saved, show fallback button and use warning color
                         if (!_identifyViewModel.SavedToSpotify && !_identifyViewModel.IsSavingToSpotify)
