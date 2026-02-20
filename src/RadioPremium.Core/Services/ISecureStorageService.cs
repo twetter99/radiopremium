@@ -45,5 +45,6 @@ public static class CredentialKeys
     public const string SpotifyAccessToken = "RadioPremium_Spotify_AccessToken";
     public const string SpotifyRefreshToken = "RadioPremium_Spotify_RefreshToken";
     public const string SpotifyTokenExpiry = "RadioPremium_Spotify_TokenExpiry";
+    public const string SpotifyGrantedScopes = "RadioPremium_Spotify_GrantedScopes";
     public const string SpotifyCodeVerifier = "RadioPremium_Spotify_CodeVerifier";
 }

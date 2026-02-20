@@ -257,7 +257,7 @@ public partial class IdentifyViewModel : ObservableRecipient
             else if (errorMessage == "SCOPE_ERROR")
             {
                 _pendingSaveTrack = track; // remember so ReconnectAndSave can retry
-                SpotifyStatusMessage = "Permisos insuficientes. Ve a Ajustes y reconecta Spotify.";
+                SpotifyStatusMessage = "Permisos insuficientes. Pulsa 'Reconectar Spotify'.";
                 File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Spotify scope error - waiting for user to reconnect\n");
             }
             else
@@ -323,7 +323,7 @@ public partial class IdentifyViewModel : ObservableRecipient
             {
                 // Still can't save even after re-auth — show reconnect button again
                 _pendingSaveTrack = track;
-                SpotifyStatusMessage = "Permisos insuficientes. Ve a Ajustes y reconecta Spotify.";
+                SpotifyStatusMessage = "Permisos insuficientes. Pulsa 'Reconectar Spotify'.";
                 File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] ReconnectAndSave: retry also got SCOPE_ERROR\n");
             }
             else
@@ -345,7 +345,7 @@ public partial class IdentifyViewModel : ObservableRecipient
 
     private static string FriendlyError(string? error) => error switch
     {
-        "SCOPE_ERROR" => "Permisos insuficientes. Ve a Ajustes y reconecta Spotify.",
+        "SCOPE_ERROR" => "Permisos insuficientes. Pulsa 'Reconectar Spotify'.",
         null => "No se encontró en Spotify",
         _ => error
     };

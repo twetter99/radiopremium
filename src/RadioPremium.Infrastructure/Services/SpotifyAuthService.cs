@@ -26,7 +26,7 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
     private const string TokenUrl = "https://accounts.spotify.com/api/token";
     private const string AuthorizeUrl = "https://accounts.spotify.com/authorize";
 
-    public bool IsAuthenticated => _tokens is not null && !string.IsNullOrEmpty(_tokens.RefreshToken);
+    public bool IsAuthenticated => _tokens is not null && !string.IsNullOrEmpty(_tokens.AccessToken);
 
     public event EventHandler<bool>? AuthenticationStateChanged;
 
@@ -53,18 +53,39 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
         var accessToken = await _secureStorage.GetAsync(CredentialKeys.SpotifyAccessToken);
         var refreshToken = await _secureStorage.GetAsync(CredentialKeys.SpotifyRefreshToken);
         var expiryStr = await _secureStorage.GetAsync(CredentialKeys.SpotifyTokenExpiry);
+        var grantedScopes = await _secureStorage.GetAsync(CredentialKeys.SpotifyGrantedScopes);
 
-        if (!string.IsNullOrEmpty(refreshToken))
+        if (!string.IsNullOrEmpty(accessToken) || !string.IsNullOrEmpty(refreshToken))
         {
             _tokens = new SpotifyTokens
             {
                 AccessToken = accessToken ?? string.Empty,
-                RefreshToken = refreshToken,
-                ExpiresAt = DateTime.TryParse(expiryStr, out var expiry) ? expiry : DateTime.MinValue
+                RefreshToken = refreshToken ?? string.Empty,
+                ExpiresAt = DateTime.TryParse(expiryStr, out var expiry) ? expiry : DateTime.MinValue,
+                Scope = grantedScopes ?? string.Empty
             };
 
-            AuthenticationStateChanged?.Invoke(this, true);
+            AuthenticationStateChanged?.Invoke(this, IsAuthenticated);
         }
+    }
+
+    public bool HasScopes(params string[] requiredScopes)
+    {
+        if (_tokens is null || string.IsNullOrWhiteSpace(_tokens.Scope))
+        {
+            return false;
+        }
+
+        if (requiredScopes is null || requiredScopes.Length == 0)
+        {
+            return true;
+        }
+
+        var granted = _tokens.Scope
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return requiredScopes.All(granted.Contains);
     }
 
     public string GetAuthorizationUrl()
@@ -151,11 +172,11 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
             _tokens = new SpotifyTokens
             {
                 AccessToken = tokenResponse.AccessToken,
-                RefreshToken = tokenResponse.RefreshToken ?? string.Empty,
+                RefreshToken = tokenResponse.RefreshToken ?? _tokens?.RefreshToken ?? string.Empty,
                 TokenType = tokenResponse.TokenType ?? "Bearer",
                 ExpiresIn = tokenResponse.ExpiresIn,
-                ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
-                Scope = tokenResponse.Scope ?? string.Empty
+                ExpiresAt = DateTime.UtcNow.AddSeconds(Math.Clamp(tokenResponse.ExpiresIn, 60, 86400)),
+                Scope = tokenResponse.Scope ?? _tokens?.Scope ?? string.Empty
             };
 
             await SaveTokensAsync();
@@ -218,7 +239,12 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
             {
                 _tokens.AccessToken = tokenResponse.AccessToken;
                 _tokens.ExpiresIn = tokenResponse.ExpiresIn;
-                _tokens.ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
+                _tokens.ExpiresAt = DateTime.UtcNow.AddSeconds(Math.Clamp(tokenResponse.ExpiresIn, 60, 86400));
+
+                if (!string.IsNullOrWhiteSpace(tokenResponse.Scope))
+                {
+                    _tokens.Scope = tokenResponse.Scope;
+                }
 
                 // Update refresh token if provided
                 if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
@@ -242,6 +268,7 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
         await _secureStorage.RemoveAsync(CredentialKeys.SpotifyAccessToken);
         await _secureStorage.RemoveAsync(CredentialKeys.SpotifyRefreshToken);
         await _secureStorage.RemoveAsync(CredentialKeys.SpotifyTokenExpiry);
+        await _secureStorage.RemoveAsync(CredentialKeys.SpotifyGrantedScopes);
 
         AuthenticationStateChanged?.Invoke(this, false);
     }
@@ -253,6 +280,7 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
         await _secureStorage.SetAsync(CredentialKeys.SpotifyAccessToken, _tokens.AccessToken);
         await _secureStorage.SetAsync(CredentialKeys.SpotifyRefreshToken, _tokens.RefreshToken);
         await _secureStorage.SetAsync(CredentialKeys.SpotifyTokenExpiry, _tokens.ExpiresAt.ToString("O"));
+        await _secureStorage.SetAsync(CredentialKeys.SpotifyGrantedScopes, _tokens.Scope);
     }
 
     private static string GenerateCodeVerifier()

@@ -44,6 +44,11 @@ public interface ISpotifyAuthService
     (string AuthUrl, Task<bool> CompletionTask) StartLoginFlow(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Checks whether the current authenticated session has all required Spotify scopes.
+    /// </summary>
+    bool HasScopes(params string[] requiredScopes);
+
+    /// <summary>
     /// Event raised when authentication state changes
     /// </summary>
     event EventHandler<bool>? AuthenticationStateChanged;

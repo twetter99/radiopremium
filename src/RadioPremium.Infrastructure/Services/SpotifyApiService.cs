@@ -255,6 +255,12 @@ public sealed class SpotifyApiService : ISpotifyApiService
     {
         try
         {
+            // Professional guard: do not call the endpoint if granted scopes do not include library write.
+            if (!_authService.HasScopes("user-library-modify"))
+            {
+                return (false, true);
+            }
+
             var request = await CreateAuthorizedRequestAsync(
                 HttpMethod.Put,
                 "/me/tracks",
