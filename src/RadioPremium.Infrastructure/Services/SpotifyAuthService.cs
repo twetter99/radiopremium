@@ -281,7 +281,7 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
 
         // Extract the port from the redirect URI to start a listener
         var redirectUri = new Uri(_settings.RedirectUri);
-        var prefix = $"http://localhost:{redirectUri.Port}/";
+        var prefix = $"http://127.0.0.1:{redirectUri.Port}/";
 
         var completionTask = Task.Run(async () =>
         {
