@@ -241,13 +241,6 @@ public partial class IdentifyViewModel : ObservableRecipient
     /// </summary>
     private async Task SaveToSpotifyLikedSongsAsync(Track track, CancellationToken cancellationToken)
     {
-        if (!_spotifyAuthService.IsAuthenticated)
-        {
-            SpotifyStatusMessage = "Conecta Spotify en Ajustes para guardar automáticamente";
-            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Spotify not authenticated, skipping auto-save\n");
-            return;
-        }
-
         try
         {
             IsSavingToSpotify = true;
