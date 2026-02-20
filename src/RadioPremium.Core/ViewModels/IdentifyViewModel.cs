@@ -346,6 +346,7 @@ public partial class IdentifyViewModel : ObservableRecipient
     private static string FriendlyError(string? error) => error switch
     {
         "SCOPE_ERROR" => "Permisos insuficientes. Pulsa 'Reconectar Spotify'.",
+        "FORBIDDEN_ERROR" => "Spotify rechazó la operación (403). Revisa en Spotify Dashboard > Users and Access que esta cuenta tenga acceso a la app.",
         null => "No se encontró en Spotify",
         _ => error
     };

@@ -251,14 +251,14 @@ public sealed class SpotifyApiService : ISpotifyApiService
         return result?.Items?.Any(i => i.Track?.Uri == trackUri) ?? false;
     }
 
-    public async Task<(bool Success, bool ScopeError)> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default)
+    public async Task<(bool Success, bool ScopeError, bool ForbiddenError)> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default)
     {
         try
         {
             // Fast-fail only when local scope metadata is known and missing.
             if (!_authService.HasScopes("user-library-modify"))
             {
-                return (false, true);
+                return (false, true, false);
             }
 
             var request = await CreateAuthorizedRequestAsync(
@@ -270,6 +270,22 @@ public sealed class SpotifyApiService : ISpotifyApiService
             request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            // Fallback: Spotify also accepts ids via query parameter; try this path if first request fails.
+            if (!response.IsSuccessStatusCode)
+            {
+                var fallback = await CreateAuthorizedRequestAsync(
+                    HttpMethod.Put,
+                    $"/me/tracks?ids={Uri.EscapeDataString(trackId)}",
+                    cancellationToken);
+                fallback.Content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
+                var fallbackResponse = await _httpClient.SendAsync(fallback, cancellationToken);
+                if (fallbackResponse.IsSuccessStatusCode)
+                {
+                    return (true, false, false);
+                }
+                response = fallbackResponse;
+            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -285,16 +301,16 @@ public sealed class SpotifyApiService : ISpotifyApiService
                 {
                     var isInsufficientScope = authHeader.Contains("insufficient_scope", StringComparison.OrdinalIgnoreCase) ||
                                               authHeader.Contains("user-library-modify", StringComparison.OrdinalIgnoreCase);
-                    return (false, isInsufficientScope);
+                    return (false, isInsufficientScope, !isInsufficientScope);
                 }
             }
 
-            return (response.IsSuccessStatusCode, false);
+            return (response.IsSuccessStatusCode, false, false);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[Spotify] SaveToLikedSongs exception: {ex.Message}");
-            return (false, false);
+            return (false, false, false);
         }
     }
 
@@ -357,13 +373,17 @@ public sealed class SpotifyApiService : ISpotifyApiService
             }
 
             // Save to Liked Songs
-            var (saved, scopeError) = await SaveToLikedSongsAsync(spotifyTrack.Id, cancellationToken);
+            var (saved, scopeError, forbiddenError) = await SaveToLikedSongsAsync(spotifyTrack.Id, cancellationToken);
 
             if (!saved)
             {
                 if (scopeError)
                 {
                     return (false, spotifyTrack, "SCOPE_ERROR");
+                }
+                if (forbiddenError)
+                {
+                    return (false, spotifyTrack, "FORBIDDEN_ERROR");
                 }
                 return (false, spotifyTrack, "Error al guardar en Liked Songs");
             }

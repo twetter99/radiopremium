@@ -54,9 +54,11 @@ public interface ISpotifyApiService
 
     /// <summary>
     /// Save a track to the user's Liked Songs (library).
-    /// Returns (Success, ScopeError) — ScopeError is true when the token lacks user-library-modify.
+    /// Returns (Success, ScopeError, ForbiddenError).
+    /// ScopeError is true when missing user-library-modify is detected.
+    /// ForbiddenError is true for persistent 403 responses not classified as scope issues.
     /// </summary>
-    Task<(bool Success, bool ScopeError)> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default);
+    Task<(bool Success, bool ScopeError, bool ForbiddenError)> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Check if a track is already in the user's Liked Songs
