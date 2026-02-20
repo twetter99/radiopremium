@@ -52,26 +52,4 @@ public interface ISpotifyApiService
     /// </summary>
     Task<bool> IsTrackInPlaylistAsync(string playlistId, string trackUri, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Save a track to the user's Liked Songs (library).
-    /// Returns (Success, ScopeError, ForbiddenError).
-    /// ScopeError is true when missing user-library-modify is detected.
-    /// ForbiddenError is true for persistent 403 responses not classified as scope issues.
-    /// </summary>
-    Task<(bool Success, bool ScopeError, bool ForbiddenError)> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Check if a track is already in the user's Liked Songs
-    /// </summary>
-    Task<bool> IsTrackSavedAsync(string trackId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Find a track on Spotify by ISRC or title/artist, returning the SpotifyTrack if found
-    /// </summary>
-    Task<SpotifyTrack?> FindSpotifyTrackAsync(Track track, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Save an identified track to Liked Songs (searches Spotify first)
-    /// </summary>
-    Task<(bool Success, SpotifyTrack? SpotifyTrack, string? ErrorMessage)> SaveIdentifiedTrackToLikedSongsAsync(Track track, CancellationToken cancellationToken = default);
 }
