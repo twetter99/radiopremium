@@ -383,7 +383,12 @@ public sealed class SpotifyApiService : ISpotifyApiService
                 }
                 if (forbiddenError)
                 {
-                    return (false, spotifyTrack, "FORBIDDEN_ERROR");
+                    var currentUser = await GetCurrentUserAsync(cancellationToken);
+                    var userHint = currentUser is null
+                        ? "No se pudo leer el perfil de Spotify actual."
+                        : $"Cuenta autenticada: {(string.IsNullOrWhiteSpace(currentUser.Email) ? currentUser.Id : currentUser.Email)}";
+                    return (false, spotifyTrack,
+                        $"Spotify rechazó la operación (403). Añade esta cuenta en Spotify Dashboard > Users and Access. {userHint}");
                 }
                 return (false, spotifyTrack, "Error al guardar en Liked Songs");
             }
