@@ -36,6 +36,14 @@ public interface ISpotifyAuthService
     Task LogoutAsync();
 
     /// <summary>
+    /// Start the full OAuth2 login flow: generate URL, start a localhost HTTP listener,
+    /// and wait for the callback. Returns the auth URL to open in a browser.
+    /// After the user authorizes, the callback is automatically handled.
+    /// </summary>
+    /// <returns>Tuple of (authUrl, completion task that resolves to true if login succeeded)</returns>
+    (string AuthUrl, Task<bool> CompletionTask) StartLoginFlow(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Event raised when authentication state changes
     /// </summary>
     event EventHandler<bool>? AuthenticationStateChanged;

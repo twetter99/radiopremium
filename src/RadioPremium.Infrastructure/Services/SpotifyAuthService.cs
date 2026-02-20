@@ -1,5 +1,6 @@
 using RadioPremium.Core.Models;
 using RadioPremium.Core.Services;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
@@ -272,6 +273,83 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
             .Replace('+', '-')
             .Replace('/', '_')
             .TrimEnd('=');
+    }
+
+    public (string AuthUrl, Task<bool> CompletionTask) StartLoginFlow(CancellationToken cancellationToken = default)
+    {
+        var authUrl = GetAuthorizationUrl();
+
+        // Extract the port from the redirect URI to start a listener
+        var redirectUri = new Uri(_settings.RedirectUri);
+        var prefix = $"http://localhost:{redirectUri.Port}/";
+
+        var completionTask = Task.Run(async () =>
+        {
+            HttpListener? listener = null;
+            try
+            {
+                listener = new HttpListener();
+                listener.Prefixes.Add(prefix);
+                listener.Start();
+
+                // Wait for the callback (timeout after 5 minutes)
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                cts.CancelAfter(TimeSpan.FromMinutes(5));
+
+                var contextTask = listener.GetContextAsync();
+                var completedTask = await Task.WhenAny(contextTask, Task.Delay(Timeout.Infinite, cts.Token));
+
+                if (completedTask != contextTask)
+                {
+                    return false; // Timed out or cancelled
+                }
+
+                var context = await contextTask;
+                var callbackUri = context.Request.Url;
+
+                // Send a nice response to the browser
+                var success = callbackUri is not null && !string.IsNullOrEmpty(callbackUri.Query);
+                var responseHtml = success
+                    ? """
+                      <html><head><meta charset="utf-8"><style>
+                      body{background:#121212;color:#fff;font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+                      .card{text-align:center;padding:40px;border-radius:16px;background:#1e1e1e}
+                      h1{color:#1DB954;font-size:24px}p{color:#b3b3b3;margin-top:8px}
+                      </style></head><body><div class="card"><h1>✓ Conectado a Spotify</h1><p>Puedes cerrar esta ventana y volver a Radio Premium</p></div></body></html>
+                      """
+                    : """
+                      <html><head><meta charset="utf-8"><style>
+                      body{background:#121212;color:#fff;font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+                      .card{text-align:center;padding:40px;border-radius:16px;background:#1e1e1e}
+                      h1{color:#e74c3c;font-size:24px}p{color:#b3b3b3;margin-top:8px}
+                      </style></head><body><div class="card"><h1>✗ Error de autenticación</h1><p>Inténtalo de nuevo desde Radio Premium</p></div></body></html>
+                      """;
+
+                var responseBytes = Encoding.UTF8.GetBytes(responseHtml);
+                context.Response.ContentType = "text/html; charset=utf-8";
+                context.Response.ContentLength64 = responseBytes.Length;
+                context.Response.StatusCode = 200;
+                await context.Response.OutputStream.WriteAsync(responseBytes, cancellationToken);
+                context.Response.Close();
+
+                if (callbackUri is not null)
+                {
+                    return await HandleCallbackAsync(callbackUri, cancellationToken);
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                try { listener?.Stop(); listener?.Close(); } catch { }
+            }
+        }, cancellationToken);
+
+        return (authUrl, completionTask);
     }
 
     private sealed class TokenResponse

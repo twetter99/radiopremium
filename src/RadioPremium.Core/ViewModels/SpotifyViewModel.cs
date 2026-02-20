@@ -75,11 +75,37 @@ public partial class SpotifyViewModel : ObservableRecipient
             IsLoading = true;
             ErrorMessage = null;
 
-            var authUrl = _authService.GetAuthorizationUrl();
+            // Start the login flow: generates URL + starts localhost HTTP listener
+            var (authUrl, completionTask) = _authService.StartLoginFlow();
             
             // Raise event so the UI layer can open the URL in a Windows browser
             // (avoids Parallels intercepting and opening in macOS)
             LoginUrlGenerated?.Invoke(this, authUrl);
+
+            // Wait for the user to complete the auth flow in the browser
+            // The localhost listener will catch the callback automatically
+            var success = await completionTask;
+
+            if (success)
+            {
+                await LoadUserProfileAsync();
+                Messenger.Send(new ShowNotificationMessage(
+                    "Spotify conectado",
+                    $"Bienvenido, {User?.DisplayName}",
+                    NotificationType.Success));
+
+                // Process pending track if any
+                if (PendingTrack is not null)
+                {
+                    var track = PendingTrack;
+                    PendingTrack = null;
+                    await AddTrackToPlaylistAsync(track);
+                }
+            }
+            else
+            {
+                ErrorMessage = "No se pudo completar la autenticación con Spotify";
+            }
         }
         catch (Exception ex)
         {
