@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.Win32;
 using RadioPremium.App.Helpers;
 using RadioPremium.App.Views;
 using RadioPremium.Core.Models;
@@ -79,12 +80,59 @@ public partial class App : Application
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "error.log"), ex.ToString());
             throw;
         }
+
+        // Listen for system power events (suspend/hibernate/resume) and session ending.
+        // When running inside a VM (e.g. Parallels), closing the VM suspends Windows.
+        // Without this, the radio keeps playing and resumes audio the next day.
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+        SystemEvents.SessionEnding += OnSessionEnding;
     }
 
     private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"), e.Exception.ToString());
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Handles system power mode changes (suspend, resume, battery status).
+    /// When the VM is suspended (Parallels close/pause) or resumed the next day,
+    /// we stop playback to prevent the radio from blasting audio unexpectedly.
+    /// </summary>
+    private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode is PowerModes.Suspend or PowerModes.Resume)
+        {
+            try
+            {
+                var audioPlayer = Services.GetService<IAudioPlayerService>();
+                audioPlayer?.Stop();
+                System.Diagnostics.Debug.WriteLine($"[RadioPremium] Playback stopped due to power mode: {e.Mode}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[RadioPremium] Error stopping playback on {e.Mode}: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles session ending (logoff, shutdown, restart).
+    /// Ensures audio is stopped and resources are cleaned up before Windows closes.
+    /// </summary>
+    private void OnSessionEnding(object sender, SessionEndingEventArgs e)
+    {
+        try
+        {
+            var audioPlayer = Services.GetService<IAudioPlayerService>();
+            audioPlayer?.Stop();
+            (audioPlayer as IDisposable)?.Dispose();
+            System.Diagnostics.Debug.WriteLine($"[RadioPremium] App cleaned up on session ending: {e.Reason}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[RadioPremium] Error during session ending cleanup: {ex.Message}");
+        }
     }
 
     private static IServiceProvider ConfigureServices()
