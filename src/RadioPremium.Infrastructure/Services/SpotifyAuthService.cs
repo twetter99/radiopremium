@@ -71,9 +71,16 @@ public sealed class SpotifyAuthService : ISpotifyAuthService
 
     public bool HasScopes(params string[] requiredScopes)
     {
-        if (_tokens is null || string.IsNullOrWhiteSpace(_tokens.Scope))
+        if (_tokens is null)
         {
             return false;
+        }
+
+        // Some Spotify token responses may omit `scope`. In that case we cannot
+        // prove scopes locally, so let the API endpoint be the source of truth.
+        if (string.IsNullOrWhiteSpace(_tokens.Scope))
+        {
+            return true;
         }
 
         if (requiredScopes is null || requiredScopes.Length == 0)

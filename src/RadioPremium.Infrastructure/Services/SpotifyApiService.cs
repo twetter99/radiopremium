@@ -255,7 +255,7 @@ public sealed class SpotifyApiService : ISpotifyApiService
     {
         try
         {
-            // Professional guard: do not call the endpoint if granted scopes do not include library write.
+            // Fast-fail only when local scope metadata is known and missing.
             if (!_authService.HasScopes("user-library-modify"))
             {
                 return (false, true);
