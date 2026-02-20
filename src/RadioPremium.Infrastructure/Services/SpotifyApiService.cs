@@ -251,6 +251,94 @@ public sealed class SpotifyApiService : ISpotifyApiService
         return result?.Items?.Any(i => i.Track?.Uri == trackUri) ?? false;
     }
 
+    public async Task<bool> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default)
+    {
+        // Check if already saved
+        if (await IsTrackSavedAsync(trackId, cancellationToken))
+        {
+            return true; // Already in Liked Songs
+        }
+
+        var request = await CreateAuthorizedRequestAsync(
+            HttpMethod.Put,
+            $"/me/tracks?ids={trackId}",
+            cancellationToken);
+
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(new { ids = new[] { trackId } }, _jsonOptions),
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> IsTrackSavedAsync(string trackId, CancellationToken cancellationToken = default)
+    {
+        var request = await CreateAuthorizedRequestAsync(
+            HttpMethod.Get,
+            $"/me/tracks/contains?ids={trackId}",
+            cancellationToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<bool[]>(_jsonOptions, cancellationToken);
+        return result?.FirstOrDefault() ?? false;
+    }
+
+    public async Task<SpotifyTrack?> FindSpotifyTrackAsync(Track track, CancellationToken cancellationToken = default)
+    {
+        SpotifyTrack? spotifyTrack = null;
+
+        // Try by ISRC first (most accurate)
+        if (!string.IsNullOrEmpty(track.Isrc))
+        {
+            spotifyTrack = await FindTrackByIsrcAsync(track.Isrc, cancellationToken);
+        }
+
+        // Fallback to title/artist search
+        if (spotifyTrack is null)
+        {
+            spotifyTrack = await FindTrackAsync(track.Title, track.Artist, cancellationToken);
+        }
+
+        return spotifyTrack;
+    }
+
+    public async Task<(bool Success, SpotifyTrack? SpotifyTrack, string? ErrorMessage)> SaveIdentifiedTrackToLikedSongsAsync(
+        Track track, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Find the track on Spotify
+            var spotifyTrack = await FindSpotifyTrackAsync(track, cancellationToken);
+
+            if (spotifyTrack is null)
+            {
+                return (false, null, "No se encontró la canción en Spotify");
+            }
+
+            // Save to Liked Songs
+            var saved = await SaveToLikedSongsAsync(spotifyTrack.Id, cancellationToken);
+
+            if (!saved)
+            {
+                return (false, spotifyTrack, "Error al guardar en Liked Songs");
+            }
+
+            return (true, spotifyTrack, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error: {ex.Message}");
+        }
+    }
+
     #region Response DTOs
 
     private sealed class SpotifyUserResponse

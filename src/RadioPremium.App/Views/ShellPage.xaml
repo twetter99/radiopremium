@@ -360,7 +360,31 @@
                         
                         <!-- Action Buttons -->
                         <StackPanel Spacing="10" HorizontalAlignment="Center">
-                            <!-- Spotify Button -->
+                            <!-- Spotify Auto-Save Status -->
+                            <StackPanel 
+                                x:Name="SpotifyAutoSavePanel" 
+                                Spacing="8" 
+                                HorizontalAlignment="Center"
+                                Visibility="Collapsed">
+                                <ProgressRing 
+                                    x:Name="SpotifySaveProgressRing"
+                                    IsActive="True"
+                                    Width="24"
+                                    Height="24"
+                                    Foreground="{StaticResource SpotifyGreenBrush}"
+                                    HorizontalAlignment="Center"
+                                    Visibility="Collapsed" />
+                                <TextBlock 
+                                    x:Name="SpotifySaveStatusText"
+                                    FontSize="13"
+                                    Foreground="{StaticResource SpotifyGreenBrush}"
+                                    HorizontalAlignment="Center"
+                                    TextAlignment="Center"
+                                    TextWrapping="Wrap"
+                                    MaxWidth="300" />
+                            </StackPanel>
+
+                            <!-- Spotify Button (fallback: search in Spotify when not auto-saved) -->
                             <Button 
                                 x:Name="AddToSpotifyButton"
                                 Click="AddToSpotify_Click"

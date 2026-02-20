@@ -44,6 +44,9 @@ public sealed partial class ShellPage : Page
         WeakReferenceMessenger.Default.Register<ShowNotificationMessage>(this, OnShowNotification);
         WeakReferenceMessenger.Default.Register<SpotifyAddedMessage>(this, OnSpotifyAdded);
 
+        // Watch IdentifyViewModel Spotify status changes for auto-save UI updates
+        _identifyViewModel.PropertyChanged += OnIdentifyViewModelPropertyChanged;
+
         // Navigate to Radio page by default
         ContentFrame.Navigate(typeof(RadioPage));
         _selectedNavButton = RadioNavButton;
@@ -239,7 +242,70 @@ public sealed partial class ShellPage : Page
             TrackIconPlaceholder.Visibility = Visibility.Visible;
         }
 
+        // Reset Spotify auto-save UI
+        SpotifyAutoSavePanel.Visibility = Visibility.Collapsed;
+        SpotifySaveProgressRing.Visibility = Visibility.Collapsed;
+        AddToSpotifyButton.Visibility = Visibility.Visible;
+
+        // If Spotify is authenticated, show saving status (auto-save will start)
+        var authService = App.GetService<ISpotifyAuthService>();
+        if (authService.IsAuthenticated)
+        {
+            AddToSpotifyButton.Visibility = Visibility.Collapsed;
+            SpotifyAutoSavePanel.Visibility = Visibility.Visible;
+            SpotifySaveProgressRing.Visibility = Visibility.Visible;
+            SpotifySaveStatusText.Text = "Guardando en Spotify...";
+            SpotifySaveStatusText.Foreground = (Brush)Application.Current.Resources["TextSecondaryBrush"];
+        }
+
         TrackIdentifiedOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void OnIdentifyViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(IdentifyViewModel.IsSavingToSpotify):
+                    SpotifySaveProgressRing.Visibility = _identifyViewModel.IsSavingToSpotify
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                    break;
+
+                case nameof(IdentifyViewModel.SavedToSpotify):
+                    if (_identifyViewModel.SavedToSpotify)
+                    {
+                        SpotifySaveStatusText.Foreground = (Brush)Application.Current.Resources["SpotifyGreenBrush"];
+                        AddToSpotifyButton.Visibility = Visibility.Collapsed;
+                    }
+                    break;
+
+                case nameof(IdentifyViewModel.SpotifyStatusMessage):
+                    if (_identifyViewModel.SpotifyStatusMessage is not null)
+                    {
+                        SpotifyAutoSavePanel.Visibility = Visibility.Visible;
+                        SpotifySaveStatusText.Text = _identifyViewModel.SpotifyStatusMessage;
+
+                        // If not saved, show fallback button and use warning color
+                        if (!_identifyViewModel.SavedToSpotify && !_identifyViewModel.IsSavingToSpotify)
+                        {
+                            SpotifySaveStatusText.Foreground = (Brush)Application.Current.Resources["TextSecondaryBrush"];
+                            AddToSpotifyButton.Visibility = Visibility.Visible;
+                        }
+                    }
+                    break;
+
+                case nameof(IdentifyViewModel.SpotifyArtworkUrl):
+                    // Update artwork in dialog if we got a better one from Spotify
+                    if (!string.IsNullOrEmpty(_identifyViewModel.SpotifyArtworkUrl))
+                    {
+                        TrackArtworkSmall.Source = new BitmapImage(new Uri(_identifyViewModel.SpotifyArtworkUrl));
+                        TrackIconPlaceholder.Visibility = Visibility.Collapsed;
+                    }
+                    break;
+            }
+        });
     }
 
     private void CloseTrackCard_Click(object sender, RoutedEventArgs e)

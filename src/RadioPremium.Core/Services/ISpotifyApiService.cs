@@ -51,4 +51,24 @@ public interface ISpotifyApiService
     /// Check if track is already in playlist
     /// </summary>
     Task<bool> IsTrackInPlaylistAsync(string playlistId, string trackUri, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Save a track to the user's Liked Songs (library)
+    /// </summary>
+    Task<bool> SaveToLikedSongsAsync(string trackId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if a track is already in the user's Liked Songs
+    /// </summary>
+    Task<bool> IsTrackSavedAsync(string trackId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Find a track on Spotify by ISRC or title/artist, returning the SpotifyTrack if found
+    /// </summary>
+    Task<SpotifyTrack?> FindSpotifyTrackAsync(Track track, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Save an identified track to Liked Songs (searches Spotify first)
+    /// </summary>
+    Task<(bool Success, SpotifyTrack? SpotifyTrack, string? ErrorMessage)> SaveIdentifiedTrackToLikedSongsAsync(Track track, CancellationToken cancellationToken = default);
 }

@@ -18,6 +18,8 @@ public partial class IdentifyViewModel : ObservableRecipient
     private readonly IIdentifiedTracksRepository _tracksRepository;
     private readonly INotificationService _notificationService;
     private readonly ISettingsService _settingsService;
+    private readonly ISpotifyApiService _spotifyApiService;
+    private readonly ISpotifyAuthService _spotifyAuthService;
     private readonly string _logPath;
     private CancellationTokenSource? _identifyCts;
     private Station? _currentStation;
@@ -37,6 +39,24 @@ public partial class IdentifyViewModel : ObservableRecipient
     [ObservableProperty]
     private bool _isDialogOpen;
 
+    [ObservableProperty]
+    private bool _isSavingToSpotify;
+
+    [ObservableProperty]
+    private bool _savedToSpotify;
+
+    [ObservableProperty]
+    private string? _spotifyStatusMessage;
+
+    [ObservableProperty]
+    private string? _spotifyArtworkUrl;
+
+    [ObservableProperty]
+    private string? _spotifyTrackName;
+
+    [ObservableProperty]
+    private string? _spotifyArtistName;
+
     public bool IsIdentifying => State == CaptureState.Capturing || State == CaptureState.Processing;
     public bool CanIdentify => State == CaptureState.Idle && _loopbackCaptureService.IsAvailable;
 
@@ -45,13 +65,17 @@ public partial class IdentifyViewModel : ObservableRecipient
         IAcrCloudRecognitionService acrCloudService,
         IIdentifiedTracksRepository tracksRepository,
         INotificationService notificationService,
-        ISettingsService settingsService)
+        ISettingsService settingsService,
+        ISpotifyApiService spotifyApiService,
+        ISpotifyAuthService spotifyAuthService)
     {
         _loopbackCaptureService = loopbackCaptureService;
         _acrCloudService = acrCloudService;
         _tracksRepository = tracksRepository;
         _notificationService = notificationService;
         _settingsService = settingsService;
+        _spotifyApiService = spotifyApiService;
+        _spotifyAuthService = spotifyAuthService;
         _logPath = Path.Combine(AppContext.BaseDirectory, "identify.log");
 
         File.AppendAllText(_logPath, $"\n[{DateTime.Now:HH:mm:ss}] IdentifyViewModel created\n");
@@ -131,6 +155,14 @@ public partial class IdentifyViewModel : ObservableRecipient
                 IdentifiedTrack = identifyResult.Track;
                 IsDialogOpen = true;
 
+                // Reset Spotify state for dialog
+                IsSavingToSpotify = false;
+                SavedToSpotify = false;
+                SpotifyStatusMessage = null;
+                SpotifyArtworkUrl = null;
+                SpotifyTrackName = null;
+                SpotifyArtistName = null;
+
                 // Save to history
                 var history = new IdentifiedTrackHistory
                 {
@@ -160,6 +192,9 @@ public partial class IdentifyViewModel : ObservableRecipient
                     "Canción identificada",
                     identifyResult.Track.DisplayText,
                     NotificationType.Success));
+
+                // Auto-save to Spotify Liked Songs if authenticated
+                _ = SaveToSpotifyLikedSongsAsync(identifyResult.Track, token);
             }
             else
             {
@@ -196,6 +231,67 @@ public partial class IdentifyViewModel : ObservableRecipient
     private void CloseDialog()
     {
         IsDialogOpen = false;
+    }
+
+    /// <summary>
+    /// Automatically saves the identified track to Spotify Liked Songs.
+    /// Runs in the background after identification completes.
+    /// </summary>
+    private async Task SaveToSpotifyLikedSongsAsync(Track track, CancellationToken cancellationToken)
+    {
+        if (!_spotifyAuthService.IsAuthenticated)
+        {
+            SpotifyStatusMessage = "Conecta Spotify en Ajustes para guardar automáticamente";
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Spotify not authenticated, skipping auto-save\n");
+            return;
+        }
+
+        try
+        {
+            IsSavingToSpotify = true;
+            SpotifyStatusMessage = "Guardando en Spotify...";
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Auto-saving to Spotify Liked Songs: {track.DisplayText}\n");
+
+            var (success, spotifyTrack, errorMessage) = await _spotifyApiService.SaveIdentifiedTrackToLikedSongsAsync(track, cancellationToken);
+
+            if (success && spotifyTrack is not null)
+            {
+                SavedToSpotify = true;
+                SpotifyStatusMessage = "♥ Guardada en tus Me gusta de Spotify";
+                SpotifyArtworkUrl = spotifyTrack.ArtworkUrl;
+                SpotifyTrackName = spotifyTrack.Name;
+                SpotifyArtistName = spotifyTrack.PrimaryArtist;
+
+                // Update the track's artwork if we got a better one from Spotify
+                if (!string.IsNullOrEmpty(spotifyTrack.ArtworkUrl) && string.IsNullOrEmpty(track.ArtworkUrl))
+                {
+                    track.ArtworkUrl = spotifyTrack.ArtworkUrl;
+                    IdentifiedTrack = null; // Force rebind
+                    IdentifiedTrack = track;
+                }
+
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Saved to Spotify Liked Songs: {spotifyTrack.Name} by {spotifyTrack.PrimaryArtist}\n");
+
+                WeakReferenceMessenger.Default.Send(new ShowNotificationMessage(
+                    "Guardada en Spotify",
+                    $"{spotifyTrack.Name} - {spotifyTrack.PrimaryArtist} añadida a Me gusta",
+                    NotificationType.Success));
+            }
+            else
+            {
+                SpotifyStatusMessage = errorMessage ?? "No se encontró en Spotify";
+                File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Failed to save to Spotify: {errorMessage}\n");
+            }
+        }
+        catch (Exception ex)
+        {
+            SpotifyStatusMessage = "Error al guardar en Spotify";
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] Error saving to Spotify: {ex.Message}\n");
+        }
+        finally
+        {
+            IsSavingToSpotify = false;
+        }
     }
 
     [RelayCommand]
