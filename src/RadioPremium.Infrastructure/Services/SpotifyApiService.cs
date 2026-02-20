@@ -362,6 +362,11 @@ public sealed class SpotifyApiService : ISpotifyApiService
 
             return (true, spotifyTrack, null);
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("No authenticated"))
+        {
+            // Token was invalidated (e.g. refresh failed due to missing scopes)
+            return (false, null, "SCOPE_ERROR");
+        }
         catch (Exception ex)
         {
             return (false, null, $"Error: {ex.Message}");
