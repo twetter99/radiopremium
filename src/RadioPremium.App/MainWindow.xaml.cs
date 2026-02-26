@@ -30,16 +30,9 @@ public sealed partial class MainWindow : Window
     private const int DWMWCP_ROUND = 2;
     private const int DWMWCP_ROUNDSMALL = 3;
 
-    // Prevent Windows from auto-restarting the app after system restart
-    [DllImport("kernel32.dll")]
-    private static extern int UnregisterApplicationRestart();
-
     public MainWindow()
     {
         InitializeComponent();
-
-        // Prevent Windows from auto-restarting this app after system restart/shutdown
-        UnregisterApplicationRestart();
 
         // Get AppWindow for customization
         var hwnd = WindowNative.GetWindowHandle(this);

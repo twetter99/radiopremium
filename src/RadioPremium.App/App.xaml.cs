@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.Win32;
 using RadioPremium.App.Helpers;
@@ -7,6 +8,7 @@ using RadioPremium.Core.Models;
 using RadioPremium.Core.Services;
 using RadioPremium.Core.ViewModels;
 using RadioPremium.Infrastructure.Services;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 namespace RadioPremium.App;
@@ -18,6 +20,24 @@ public partial class App : Application
 {
     private Window? _window;
     private MiniPlayerWindow? _miniPlayerWindow;
+
+    /// <summary>
+    /// Tracks the time when the system was suspended.
+    /// Used to detect prolonged suspends (e.g. Parallels VM shutdown)
+    /// and close the app on resume instead of persisting across sessions.
+    /// </summary>
+    private DateTime _suspendedAt = DateTime.MinValue;
+
+    /// <summary>
+    /// Minimum suspend duration to trigger automatic app exit on resume.
+    /// If the system was suspended for longer than this, the app closes itself
+    /// because it likely means the host machine was shut down (Parallels VM).
+    /// </summary>
+    private static readonly TimeSpan SuspendExitThreshold = TimeSpan.FromMinutes(2);
+
+    // Prevent Windows from auto-restarting the app after system restart
+    [DllImport("kernel32.dll")]
+    private static extern int UnregisterApplicationRestart();
 
     public static IServiceProvider Services { get; private set; } = null!;
 
@@ -69,7 +89,11 @@ public partial class App : Application
     {
         UnhandledException += App_UnhandledException;
         InitializeComponent();
-        
+
+        // Prevent Windows from auto-restarting this app after system restart/shutdown.
+        // Called early, before any window is created, so Windows never registers us.
+        UnregisterApplicationRestart();
+
         try
         {
             Services = ConfigureServices();
@@ -83,7 +107,8 @@ public partial class App : Application
 
         // Listen for system power events (suspend/hibernate/resume) and session ending.
         // When running inside a VM (e.g. Parallels), closing the VM suspends Windows.
-        // Without this, the radio keeps playing and resumes audio the next day.
+        // On suspend: record timestamp and stop audio.
+        // On resume: if suspended too long (VM was shut down), exit the app entirely.
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
         SystemEvents.SessionEnding += OnSessionEnding;
     }
@@ -96,42 +121,115 @@ public partial class App : Application
 
     /// <summary>
     /// Handles system power mode changes (suspend, resume, battery status).
-    /// When the VM is suspended (Parallels close/pause) or resumed the next day,
-    /// we stop playback to prevent the radio from blasting audio unexpectedly.
+    /// <para>
+    /// <b>Suspend:</b> Record the current time and stop playback immediately.
+    /// This runs just before the OS freezes all processes (Parallels VM close/pause).
+    /// </para>
+    /// <para>
+    /// <b>Resume:</b> If the suspend lasted longer than <see cref="SuspendExitThreshold"/>,
+    /// it means the host was shut down (e.g. Mac turned off with Parallels).
+    /// In that case we exit the app entirely so it doesn't linger from a previous session.
+    /// For brief suspends (laptop lid close), we just stop playback as a safety measure.
+    /// </para>
     /// </summary>
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
-        if (e.Mode is PowerModes.Suspend or PowerModes.Resume)
+        try
         {
-            try
+            if (e.Mode == PowerModes.Suspend)
             {
+                _suspendedAt = DateTime.UtcNow;
                 var audioPlayer = Services.GetService<IAudioPlayerService>();
                 audioPlayer?.Stop();
-                System.Diagnostics.Debug.WriteLine($"[RadioPremium] Playback stopped due to power mode: {e.Mode}");
+                System.Diagnostics.Debug.WriteLine($"[RadioPremium] System suspending. Timestamp recorded, playback stopped.");
             }
-            catch (Exception ex)
+            else if (e.Mode == PowerModes.Resume)
             {
-                System.Diagnostics.Debug.WriteLine($"[RadioPremium] Error stopping playback on {e.Mode}: {ex.Message}");
+                var elapsed = DateTime.UtcNow - _suspendedAt;
+                System.Diagnostics.Debug.WriteLine($"[RadioPremium] System resumed after {elapsed.TotalMinutes:F1} min.");
+
+                // Always stop playback on resume
+                var audioPlayer = Services.GetService<IAudioPlayerService>();
+                audioPlayer?.Stop();
+
+                if (_suspendedAt != DateTime.MinValue && elapsed > SuspendExitThreshold)
+                {
+                    // Prolonged suspend detected (Parallels/VM shutdown).
+                    // Exit the app so it doesn't persist across sessions.
+                    System.Diagnostics.Debug.WriteLine($"[RadioPremium] Prolonged suspend detected ({elapsed.TotalMinutes:F1} min > {SuspendExitThreshold.TotalMinutes} min). Exiting app.");
+                    CleanupAndExit();
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[RadioPremium] Error handling power mode {e.Mode}: {ex.Message}");
         }
     }
 
     /// <summary>
     /// Handles session ending (logoff, shutdown, restart).
-    /// Ensures audio is stopped and resources are cleaned up before Windows closes.
+    /// Ensures audio is stopped and the application exits completely.
     /// </summary>
     private void OnSessionEnding(object sender, SessionEndingEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine($"[RadioPremium] Session ending: {e.Reason}. Cleaning up and exiting.");
+        CleanupAndExit();
+    }
+
+    /// <summary>
+    /// Stops all services, disposes resources, and exits the application.
+    /// Safe to call from any thread — dispatches to UI thread if needed.
+    /// </summary>
+    private void CleanupAndExit()
+    {
         try
         {
+            // Stop audio and dispose services
             var audioPlayer = Services.GetService<IAudioPlayerService>();
             audioPlayer?.Stop();
             (audioPlayer as IDisposable)?.Dispose();
-            System.Diagnostics.Debug.WriteLine($"[RadioPremium] App cleaned up on session ending: {e.Reason}");
+
+            var loopback = Services.GetService<ILoopbackCaptureService>();
+            (loopback as IDisposable)?.Dispose();
+
+            // Unsubscribe from system events to prevent callbacks after exit
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+            SystemEvents.SessionEnding -= OnSessionEnding;
+
+            System.Diagnostics.Debug.WriteLine($"[RadioPremium] Cleanup complete. Calling Exit().");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[RadioPremium] Error during session ending cleanup: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[RadioPremium] Error during cleanup: {ex.Message}");
+        }
+
+        // Marshal Exit() call to the UI thread (SystemEvents fire on a worker thread)
+        try
+        {
+            var dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+            if (dispatcherQueue != null)
+            {
+                Exit();
+            }
+            else
+            {
+                // We're on a worker thread — post to the main window's dispatcher
+                var window = _window ?? (_miniPlayerWindow as Window);
+                if (window?.DispatcherQueue != null)
+                {
+                    window.DispatcherQueue.TryEnqueue(() => Exit());
+                }
+                else
+                {
+                    // Last resort: terminate the process directly
+                    Environment.Exit(0);
+                }
+            }
+        }
+        catch
+        {
+            Environment.Exit(0);
         }
     }
 
